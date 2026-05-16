@@ -12,7 +12,9 @@ class Player extends Phaser.Physics.Arcade.Sprite {
       'indie-idle': 140,
       'indie-run':  140,
       'indie-jump-rise': 202,
-      'indie-jump-land': 202
+      'indie-jump-land': 202,
+      'indie-suck':         140,
+      'indie-cheeks-full':  140
     };
     this.applyDisplayHeight();
     this.refreshBody();
@@ -50,15 +52,15 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.state_ === s) return;
     this.state_ = s;
 
-    if (s === 'mouthOpen') this.setTint(0xFFAACC);
-    else if (s === 'cheeksFull') this.setTint(0xFFE066);
-    else if (s === 'hurt') this.setTint(0xFF4444);
+    if (s === 'hurt') this.setTint(0xFF4444);
     else if (!this.invulnerableUntil) this.clearTint();
 
     let animKey;
     if (s === 'running') animKey = 'indie-run';
     else if (s === 'jumping' || s === 'falling') animKey = 'indie-jump-rise';
     else if (s === 'landing') animKey = 'indie-jump-land';
+    else if (s === 'sucking') animKey = 'indie-suck';
+    else if (s === 'cheeksFull') animKey = 'indie-cheeks-full';
     else animKey = 'indie-idle';
 
     const current = this.anims.currentAnim;
@@ -104,21 +106,32 @@ class Player extends Phaser.Physics.Arcade.Sprite {
       if (isDouble) this.play('indie-jump-rise');
     }
 
-    if (this.cheeksFull) {
-      if (eatJustPressed) this.spit();
+    this.scene_.rocks.children.iterate(r => {
+      if (r && r.beingSucked) {
+        r.beingSucked = false;
+        if (r.body) r.body.allowGravity = true;
+      }
+    });
+
+    if (this.cheeksFull && eatJustPressed) {
+      this.spit();
+    }
+
+    if (eatHeld && !this.cheeksFull) {
+      this.applySuckPull();
     }
 
     const playingLand = this.anims.currentAnim && this.anims.currentAnim.key === 'indie-jump-land' && this.anims.isPlaying;
     if (this.cheeksFull) {
       this.setStateLabel('cheeksFull');
-    } else if (eatHeld) {
-      this.setStateLabel('mouthOpen');
     } else if (!grounded) {
       this.setStateLabel(this.body.velocity.y < 0 ? 'jumping' : 'falling');
+    } else if (eatHeld) {
+      this.setStateLabel('sucking');
     } else if (!wasGrounded && grounded) {
       this.setStateLabel('landing');
     } else if (playingLand) {
-      // hold while the landing crouch plays out
+      // hold while landing crouch plays out
     } else if (left || right) {
       this.setStateLabel('running');
     } else {
@@ -134,8 +147,43 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     this.wasGroundedLastFrame = grounded;
   }
 
-  isMouthOpen() {
-    return this.state_ === 'mouthOpen';
+  applySuckPull() {
+    let nearest = null;
+    let nearestDist = Infinity;
+    this.scene_.rocks.children.iterate(r => {
+      if (!r || !r.active) return;
+      const dx = r.x - this.x;
+      if (this.facing * dx <= 0) return;
+      const dy = r.y - this.y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d < 360 && d < nearestDist) {
+        nearestDist = d;
+        nearest = r;
+      }
+    });
+
+    if (!nearest) return;
+
+    const dx = this.x - nearest.x;
+    const dy = (this.y - 40) - nearest.y;
+    const d = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+    let pullSpeed;
+    if (d > 90) {
+      pullSpeed = 200 + 360 * (1 - d / 360);
+    } else {
+      pullSpeed = 1100;
+    }
+    nearest.beingSucked = true;
+    if (nearest.body) nearest.body.allowGravity = false;
+    nearest.setVelocity((dx / d) * pullSpeed, (dy / d) * pullSpeed);
+
+    if (d < 30) {
+      this.eatRock(nearest);
+    }
+  }
+
+  isSucking() {
+    return this.state_ === 'sucking';
   }
 
   eatRock(rock) {
@@ -149,7 +197,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
   spit() {
     if (!this.cheeksFull) return;
     this.cheeksFull = false;
-    this.scene_.spawnProjectile(this.x + this.facing * 40, this.y - 10, this.facing);
+    this.scene_.spawnProjectile(this.x + this.facing * 40, this.y - 50, this.facing);
   }
 
   takeDamage(time) {

@@ -23,6 +23,7 @@ class Rock extends Phaser.Physics.Arcade.Sprite {
 
   update() {
     if (!this.active) return;
+    if (this.beingSucked) return;
     this.setVelocityX(this.direction * this.speed);
 
     if (this.body.blocked.left || this.body.blocked.right) {

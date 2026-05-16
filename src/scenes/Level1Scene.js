@@ -186,7 +186,7 @@ class Level1Scene extends Phaser.Scene {
   handleRockHit(player, rock) {
     if (!rock.active || this.finished) return;
 
-    if (player.isMouthOpen() && !player.cheeksFull) {
+    if (player.isSucking() && !player.cheeksFull) {
       player.eatRock(rock);
       return;
     }

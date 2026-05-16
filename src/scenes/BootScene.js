@@ -15,6 +15,10 @@ class BootScene extends Phaser.Scene {
       const n = String(i).padStart(2, '0');
       this.load.image(`indie-jump-${i}`, `assets/sprites/indie-jump-v01/indie-jump-v01_${n}.png`);
     }
+    for (let i = 1; i <= 10; i++) {
+      const n = String(i).padStart(2, '0');
+      this.load.image(`indie-suck-${i}`, `assets/sprites/indie-suck-in-rock-v01/indie-suck-in-rock-v01_${n}.png`);
+    }
     for (let i = 1; i <= 7; i++) {
       const n = String(i).padStart(2, '0');
       this.load.image(`rock-run-${i}`, `assets/sprites/rock-run-v1/rock-run_${n}.png`);
@@ -49,6 +53,7 @@ class BootScene extends Phaser.Scene {
       ...this.idleFrames.map(i => `indie-idle-${i}`),
       ...[1, 2, 3, 4, 5, 6, 7, 8].map(i => `indie-run-${i}`),
       ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => `indie-jump-${i}`),
+      ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => `indie-suck-${i}`),
       ...[1, 2, 3, 4, 5, 6, 7].map(i => `rock-run-${i}`),
       ...[1, 2, 3, 4, 5, 6, 7, 8].map(i => `hudson-idle-${i}`),
       ...[1, 2, 3, 4, 5, 6, 7, 8].map(i => `hudson-run-${i}`),
@@ -85,6 +90,18 @@ class BootScene extends Phaser.Scene {
       frames: [7, 8, 9].map(i => ({ key: `indie-jump-${i}` })),
       frameRate: 14,
       repeat: 0
+    });
+    this.anims.create({
+      key: 'indie-suck',
+      frames: [1, 2, 3, 4, 5].map(i => ({ key: `indie-suck-${i}` })),
+      frameRate: 14,
+      repeat: 0
+    });
+    this.anims.create({
+      key: 'indie-cheeks-full',
+      frames: [7, 8, 9, 10].map(i => ({ key: `indie-suck-${i}` })),
+      frameRate: 4,
+      repeat: -1
     });
     this.anims.create({
       key: 'rock-run',
