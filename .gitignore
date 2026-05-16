@@ -2,9 +2,7 @@
 .claude/
 .playwright-mcp/
 references/
-*.jpeg
-*.jpg
-!references/**/*.jpeg
-!references/**/*.jpg
+/*.jpeg
+/*.jpg
 *.log
 node_modules/
