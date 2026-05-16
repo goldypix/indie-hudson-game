@@ -13,6 +13,9 @@ class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.speed = 280;
     this.jumpVelocity = -640;
+    this.maxJumps = 2;
+    this.jumpsLeft = this.maxJumps;
+    this.wasGroundedLastFrame = false;
     this.facing = 1;
 
     this.state_ = 'idle';
@@ -31,14 +34,13 @@ class Player extends Phaser.Physics.Arcade.Sprite {
   refreshBody() {
     const w = this.texture.getSourceImage().width;
     const h = this.texture.getSourceImage().height;
-    const bw = w * 0.32;
-    const bh = h * 0.92;
-    this.body.setSize(bw, bh).setOffset((w - bw) / 2, h - bh);
+    const bw = w * 0.30;
+    const bh = h * 0.82;
+    this.body.setSize(bw, bh).setOffset((w - bw) / 2, h * 0.13);
   }
 
   setStateLabel(s) {
     if (this.state_ === s) return;
-    const prev = this.state_;
     this.state_ = s;
 
     if (s === 'mouthOpen') this.setTint(0xFFAACC);
@@ -46,7 +48,11 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     else if (s === 'hurt') this.setTint(0xFF4444);
     else if (!this.invulnerableUntil) this.clearTint();
 
-    const animKey = (s === 'running') ? 'indie-run' : 'indie-idle';
+    let animKey;
+    if (s === 'running') animKey = 'indie-run';
+    else if (s === 'jumping' || s === 'falling') animKey = 'indie-jump';
+    else animKey = 'indie-idle';
+
     const current = this.anims.currentAnim;
     if (!current || current.key !== animKey || !this.anims.isPlaying) {
       this.play(animKey, true);
@@ -76,8 +82,16 @@ class Player extends Phaser.Physics.Arcade.Sprite {
       this.setVelocityX(0);
     }
 
-    if (jump && this.body.blocked.down) {
-      this.setVelocityY(this.jumpVelocity);
+    const grounded = this.body.blocked.down;
+    if (grounded && !this.wasGroundedLastFrame) {
+      this.jumpsLeft = this.maxJumps;
+    }
+    this.wasGroundedLastFrame = grounded;
+
+    if (jump && this.jumpsLeft > 0) {
+      const isDouble = this.jumpsLeft < this.maxJumps;
+      this.setVelocityY(this.jumpVelocity * (isDouble ? 0.88 : 1));
+      this.jumpsLeft--;
     }
 
     if (this.cheeksFull) {
@@ -88,7 +102,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
       this.setStateLabel('cheeksFull');
     } else if (eatHeld) {
       this.setStateLabel('mouthOpen');
-    } else if (!this.body.blocked.down) {
+    } else if (!grounded) {
       this.setStateLabel(this.body.velocity.y < 0 ? 'jumping' : 'falling');
     } else if (left || right) {
       this.setStateLabel('running');

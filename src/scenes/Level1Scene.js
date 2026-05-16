@@ -10,67 +10,101 @@ class Level1Scene extends Phaser.Scene {
     this.add.rectangle(0, 0, this.worldWidth, this.worldHeight, 0x87CEEB)
       .setOrigin(0).setScrollFactor(0).setDepth(-100);
 
-    for (let i = 0; i < 10; i++) {
-      const x = (i + 1) * (this.worldWidth / 11);
-      const y = Phaser.Math.Between(50, 220);
-      this.add.image(x, y, 'cloud')
-        .setScrollFactor(0.4)
-        .setScale(Phaser.Math.FloatBetween(0.18, 0.32))
+    const cloudCount = Phaser.Math.Between(10, 14);
+    for (let i = 0; i < cloudCount; i++) {
+      this.add.image(
+        Phaser.Math.Between(40, this.worldWidth - 40),
+        Phaser.Math.Between(40, 240),
+        'cloud'
+      )
+        .setScrollFactor(Phaser.Math.FloatBetween(0.3, 0.5))
+        .setScale(Phaser.Math.FloatBetween(0.32, 0.65))
+        .setAlpha(Phaser.Math.FloatBetween(0.85, 1))
         .setDepth(-50);
     }
 
-    const treeXs = [180, 760, 1400, 2050, 2700, 3250];
-    treeXs.forEach((x, i) => {
-      const scale = 0.30 + (i % 2) * 0.06;
-      this.add.image(x, 620, 'tree')
+    const treeCount = Phaser.Math.Between(7, 11);
+    for (let i = 0; i < treeCount; i++) {
+      this.add.image(
+        Phaser.Math.Between(0, this.worldWidth),
+        Phaser.Math.Between(610, 640),
+        'tree'
+      )
         .setOrigin(0.5, 1)
-        .setScrollFactor(0.7)
-        .setScale(scale)
+        .setScrollFactor(Phaser.Math.FloatBetween(0.55, 0.78))
+        .setScale(Phaser.Math.FloatBetween(0.55, 0.95))
+        .setFlipX(Math.random() < 0.5)
         .setDepth(-20);
-    });
+    }
 
     this.platforms = this.physics.add.staticGroup();
     for (let x = 0; x < this.worldWidth; x += 64) {
       this.platforms.create(x + 32, 688, 'ground').refreshBody();
     }
 
-    const platformPositions = [
-      [400, 576], [528, 576], [656, 576],
-      [880, 496], [1008, 496],
-      [1240, 416], [1368, 416], [1496, 416],
-      [1760, 528], [1888, 528], [2016, 528],
-      [2240, 448], [2368, 448],
-      [2620, 528], [2748, 528], [2876, 528]
+    const platformGroups = [
+      { x: 540, y: 570, scale: 0.38 },
+      { x: 1340, y: 480, scale: 0.42 },
+      { x: 2130, y: 540, scale: 0.36 },
+      { x: 2820, y: 460, scale: 0.40 }
     ];
-    platformPositions.forEach(([x, y]) => {
-      const p = this.platforms.create(x, y, 'platform-strip', 'platform-one');
-      p.setScale(0.22);
-      p.refreshBody();
+    const groupCenters = [];
+    platformGroups.forEach(g => {
+      this.add.image(g.x, g.y, 'platform-strip')
+        .setScale(g.scale)
+        .setDepth(-3);
+
+      const stripW = 720;
+      const stripH = 217;
+      const platformCentersX = [115, 358, 600];
+      const woodTopY = 22;
+      const bodyW = 210;
+      const bodyH = 60;
+
+      platformCentersX.forEach(px => {
+        const wx = g.x + (px - stripW / 2) * g.scale;
+        const wy = g.y + (woodTopY + bodyH / 2 - stripH / 2) * g.scale;
+        const body = this.platforms.create(wx, wy, 'blank');
+        body.setVisible(false);
+        body.setScale(bodyW * g.scale, bodyH * g.scale);
+        body.refreshBody();
+        groupCenters.push({ x: wx, y: wy, w: bodyW * g.scale });
+      });
     });
 
-    const bushXs = [220, 540, 950, 1350, 1700, 2100, 2480, 2880, 3200];
-    bushXs.forEach(x => {
-      this.add.image(x, 660, 'bush')
+    const isOnPlatform = (x) => groupCenters.some(c => Math.abs(c.x - x) < (c.w / 2 + 30));
+
+    const bushCount = Phaser.Math.Between(10, 16);
+    for (let i = 0; i < bushCount; i++) {
+      let bx; let tries = 0;
+      do { bx = Phaser.Math.Between(40, this.worldWidth - 40); tries++; }
+      while (isOnPlatform(bx) && tries < 8);
+      this.add.image(bx, Phaser.Math.Between(656, 668), 'bush')
         .setOrigin(0.5, 1)
-        .setScale(0.22)
+        .setScale(Phaser.Math.FloatBetween(0.30, 0.55))
+        .setFlipX(Math.random() < 0.5)
         .setDepth(-2);
-    });
+    }
 
-    const flowerXs = [80, 350, 700, 1150, 1580, 1850, 2280, 2640, 3000, 3320];
-    flowerXs.forEach(x => {
-      this.add.image(x, 666, 'flower')
+    const flowerCount = Phaser.Math.Between(14, 22);
+    for (let i = 0; i < flowerCount; i++) {
+      let fx; let tries = 0;
+      do { fx = Phaser.Math.Between(20, this.worldWidth - 20); tries++; }
+      while (isOnPlatform(fx) && tries < 8);
+      this.add.image(fx, Phaser.Math.Between(662, 674), 'flower')
         .setOrigin(0.5, 1)
-        .setScale(0.14)
+        .setScale(Phaser.Math.FloatBetween(0.18, 0.32))
+        .setFlipX(Math.random() < 0.5)
         .setDepth(-1);
-    });
+    }
 
     this.coins = this.physics.add.group({ allowGravity: false });
     const coinPositions = [
-      [260, 600], [400, 520], [528, 520], [656, 520],
-      [944, 440], [1304, 360], [1432, 360],
-      [1760, 472], [1888, 472], [2016, 472],
-      [2304, 392], [2680, 472], [2876, 472],
-      [3100, 600]
+      [300, 600], [900, 600], [1720, 600], [2440, 600], [3120, 600],
+      [447, 477], [540, 477], [631, 477],
+      [1237, 384], [1340, 384], [1441, 384],
+      [2042, 449], [2130, 449], [2216, 449],
+      [2722, 365], [2820, 365], [2916, 365]
     ];
     coinPositions.forEach(([x, y]) => this.coins.create(x, y, 'coin'));
 

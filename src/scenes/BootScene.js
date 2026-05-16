@@ -11,6 +11,10 @@ class BootScene extends Phaser.Scene {
       const n = String(i).padStart(2, '0');
       this.load.image(`indie-run-${i}`, `assets/sprites/indie-run-v2/indie-run-v2_${n}.png`);
     }
+    for (let i = 1; i <= 9; i++) {
+      const n = String(i).padStart(2, '0');
+      this.load.image(`indie-jump-${i}`, `assets/sprites/indie-jump-v01/indie-jump-v01_${n}.png`);
+    }
     for (let i = 1; i <= 7; i++) {
       const n = String(i).padStart(2, '0');
       this.load.image(`rock-run-${i}`, `assets/sprites/rock-run-v1/rock-run_${n}.png`);
@@ -31,6 +35,7 @@ class BootScene extends Phaser.Scene {
     const smooth = [
       ...this.idleFrames.map(i => `indie-idle-${i}`),
       ...[1, 2, 3, 4, 5, 6, 7, 8].map(i => `indie-run-${i}`),
+      ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => `indie-jump-${i}`),
       ...[1, 2, 3, 4, 5, 6, 7].map(i => `rock-run-${i}`),
       'cloud', 'tree', 'bush', 'flower', 'platform-strip'
     ];
@@ -39,8 +44,11 @@ class BootScene extends Phaser.Scene {
       if (tex) tex.setFilter(Phaser.Textures.FilterMode.LINEAR);
     });
 
-    const strip = this.textures.get('platform-strip');
-    if (strip) strip.add('platform-one', 0, 10, 0, 460, 432);
+    const g = this.make.graphics({ x: 0, y: 0, add: false });
+    g.fillStyle(0xff0000, 1);
+    g.fillRect(0, 0, 1, 1);
+    g.generateTexture('blank', 1, 1);
+    g.destroy();
 
     this.anims.create({
       key: 'indie-idle',
@@ -53,6 +61,12 @@ class BootScene extends Phaser.Scene {
       frames: [1, 2, 3, 4, 5, 6, 7, 8].map(i => ({ key: `indie-run-${i}` })),
       frameRate: 14,
       repeat: -1
+    });
+    this.anims.create({
+      key: 'indie-jump',
+      frames: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => ({ key: `indie-jump-${i}` })),
+      frameRate: 18,
+      repeat: 0
     });
     this.anims.create({
       key: 'rock-run',
