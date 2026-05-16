@@ -6,10 +6,10 @@ const config = {
   parent: 'game',
   backgroundColor: '#87CEEB',
   scale: {
-    mode: Phaser.Scale.FIT,
+    mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: 1280 * DPR,
-    height: 720 * DPR
+    width: window.innerWidth * DPR,
+    height: window.innerHeight * DPR
   },
   physics: {
     default: 'arcade',

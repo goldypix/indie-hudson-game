@@ -2,7 +2,13 @@ class Level1Scene extends Phaser.Scene {
   constructor() { super('Level1'); }
 
   create() {
-    this.cameras.main.setZoom(window.GAME_DPR || 1);
+    const fitZoom = () => {
+      const cam = this.cameras.main;
+      const dpr = window.GAME_DPR || 1;
+      cam.setZoom((this.scale.height / 720));
+    };
+    fitZoom();
+    this.scale.on('resize', fitZoom);
     this.worldWidth = 3400;
     this.worldHeight = 720;
     this.physics.world.setBounds(0, 0, this.worldWidth, this.worldHeight);
