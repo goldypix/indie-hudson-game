@@ -6,7 +6,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.scene_ = scene;
     this.setCollideWorldBounds(true);
-    this.setOrigin(0.5, 1);
+    this.setOrigin(0.5, 0.97);
 
     this.animDisplayHeights = {
       'indie-idle': 140,
@@ -43,7 +43,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     const h = this.texture.getSourceImage().height;
     const bw = w * 0.30;
     const bh = h * 0.82;
-    this.body.setSize(bw, bh).setOffset((w - bw) / 2, h - bh);
+    this.body.setSize(bw, bh).setOffset((w - bw) / 2, h * 0.97 - bh);
   }
 
   setStateLabel(s) {

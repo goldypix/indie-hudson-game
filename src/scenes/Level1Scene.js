@@ -23,19 +23,6 @@ class Level1Scene extends Phaser.Scene {
         .setDepth(-50);
     }
 
-    const treeCount = Phaser.Math.Between(7, 11);
-    for (let i = 0; i < treeCount; i++) {
-      this.add.image(
-        Phaser.Math.Between(0, this.worldWidth),
-        Phaser.Math.Between(610, 640),
-        'tree'
-      )
-        .setOrigin(0.5, 1)
-        .setScrollFactor(Phaser.Math.FloatBetween(0.55, 0.78))
-        .setScale(Phaser.Math.FloatBetween(0.30, 0.55))
-        .setFlipX(Math.random() < 0.5)
-        .setDepth(-20);
-    }
 
     this.platforms = this.physics.add.staticGroup();
     for (let x = 0; x < this.worldWidth; x += 64) {
