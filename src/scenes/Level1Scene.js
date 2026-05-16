@@ -39,13 +39,13 @@ class Level1Scene extends Phaser.Scene {
     }
 
     const platformList = [
-      [480,  530, 0.32],
-      [950,  470, 0.30],
-      [1150, 540, 0.28],
-      [1600, 410, 0.36],
-      [2050, 510, 0.30],
-      [2450, 400, 0.28],
-      [2950, 530, 0.34]
+      [480,  500, 0.32],
+      [950,  450, 0.30],
+      [1150, 490, 0.28],
+      [1600, 420, 0.36],
+      [2050, 470, 0.30],
+      [2450, 430, 0.28],
+      [2950, 490, 0.34]
     ];
     const platformBoxes = [];
     platformList.forEach(([x, y, scale]) => {
@@ -86,12 +86,12 @@ class Level1Scene extends Phaser.Scene {
 
     this.coins = this.physics.add.group({ allowGravity: false });
     const coinPositions = [
-      [480, 490],
-      [950, 430], [1150, 500],
-      [1600, 370],
-      [2050, 470],
-      [2450, 360],
-      [2950, 490],
+      [480, 460],
+      [950, 410], [1150, 450],
+      [1600, 380],
+      [2050, 430],
+      [2450, 390],
+      [2950, 450],
       [250, 600], [720, 600], [1380, 600], [1850, 600], [2700, 600], [3250, 600]
     ];
     coinPositions.forEach(([x, y]) => {
@@ -186,6 +186,16 @@ class Level1Scene extends Phaser.Scene {
     this.player.update(time);
     if (this.hudson) this.hudson.update(time);
     this.rocks.children.iterate(r => { if (r && r.active) r.update(); });
+
+    const cam = this.cameras.main;
+    const view = cam.worldView;
+    const margin = 60;
+    const edgeLeft = view.x + margin;
+    const edgeRight = view.x + view.width - margin;
+    [this.player, this.hudson].forEach(p => {
+      if (p.x <= edgeLeft && p.body.velocity.x < 0) p.setVelocityX(0);
+      if (p.x >= edgeRight && p.body.velocity.x > 0) p.setVelocityX(0);
+    });
   }
 
   scheduleNextRock() {
