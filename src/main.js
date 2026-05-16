@@ -1,4 +1,4 @@
-const DPR = Math.min(3, window.devicePixelRatio || 1);
+const DPR = Math.min(2, window.devicePixelRatio || 1);
 window.GAME_DPR = DPR;
 
 const config = {

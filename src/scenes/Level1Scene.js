@@ -18,7 +18,7 @@ class Level1Scene extends Phaser.Scene {
         'cloud'
       )
         .setScrollFactor(Phaser.Math.FloatBetween(0.3, 0.5))
-        .setScale(Phaser.Math.FloatBetween(0.32, 0.65))
+        .setScale(Phaser.Math.FloatBetween(0.18, 0.36))
         .setAlpha(Phaser.Math.FloatBetween(0.85, 1))
         .setDepth(-50);
     }
@@ -32,7 +32,7 @@ class Level1Scene extends Phaser.Scene {
       )
         .setOrigin(0.5, 1)
         .setScrollFactor(Phaser.Math.FloatBetween(0.55, 0.78))
-        .setScale(Phaser.Math.FloatBetween(0.55, 0.95))
+        .setScale(Phaser.Math.FloatBetween(0.30, 0.55))
         .setFlipX(Math.random() < 0.5)
         .setDepth(-20);
     }
@@ -43,10 +43,10 @@ class Level1Scene extends Phaser.Scene {
     }
 
     const platformGroups = [
-      { x: 540, y: 570, scale: 0.38 },
-      { x: 1340, y: 480, scale: 0.42 },
-      { x: 2130, y: 540, scale: 0.36 },
-      { x: 2820, y: 460, scale: 0.40 }
+      { x: 540,  y: 570, scale: 0.24 },
+      { x: 1340, y: 480, scale: 0.26 },
+      { x: 2130, y: 540, scale: 0.23 },
+      { x: 2820, y: 460, scale: 0.25 }
     ];
     const groupCenters = [];
     platformGroups.forEach(g => {
@@ -81,7 +81,7 @@ class Level1Scene extends Phaser.Scene {
       while (isOnPlatform(bx) && tries < 8);
       this.add.image(bx, Phaser.Math.Between(656, 668), 'bush')
         .setOrigin(0.5, 1)
-        .setScale(Phaser.Math.FloatBetween(0.30, 0.55))
+        .setScale(Phaser.Math.FloatBetween(0.20, 0.36))
         .setFlipX(Math.random() < 0.5)
         .setDepth(-2);
     }
@@ -93,7 +93,7 @@ class Level1Scene extends Phaser.Scene {
       while (isOnPlatform(fx) && tries < 8);
       this.add.image(fx, Phaser.Math.Between(662, 674), 'flower')
         .setOrigin(0.5, 1)
-        .setScale(Phaser.Math.FloatBetween(0.18, 0.32))
+        .setScale(Phaser.Math.FloatBetween(0.11, 0.20))
         .setFlipX(Math.random() < 0.5)
         .setDepth(-1);
     }

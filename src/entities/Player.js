@@ -7,7 +7,11 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene_ = scene;
     this.setCollideWorldBounds(true);
 
-    this.targetDisplayHeight = 140;
+    this.animDisplayHeights = {
+      'indie-idle': 140,
+      'indie-run':  140,
+      'indie-jump': 168
+    };
     this.applyDisplayHeight();
     this.refreshBody();
 
@@ -26,9 +30,10 @@ class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   applyDisplayHeight() {
+    const key = (this.anims.currentAnim && this.anims.currentAnim.key) || 'indie-idle';
+    const target = this.animDisplayHeights[key] || 140;
     const texH = this.texture.getSourceImage().height;
-    const s = this.targetDisplayHeight / texH;
-    this.setScale(s);
+    this.setScale(target / texH);
   }
 
   refreshBody() {
