@@ -29,37 +29,29 @@ class Level1Scene extends Phaser.Scene {
       this.platforms.create(x + 32, 688, 'ground').refreshBody();
     }
 
-    const platformGroups = [
-      { x: 540,  y: 570, scale: 0.24 },
-      { x: 1340, y: 480, scale: 0.26 },
-      { x: 2130, y: 540, scale: 0.23 },
-      { x: 2820, y: 460, scale: 0.25 }
+    const platformList = [
+      [400,  580, 0.30],
+      [620,  580, 0.30],
+      [840,  580, 0.30],
+      [1080, 490, 0.32],
+      [1320, 490, 0.32],
+      [1580, 410, 0.34],
+      [1820, 410, 0.34],
+      [2080, 500, 0.32],
+      [2300, 500, 0.32],
+      [2580, 420, 0.32],
+      [2820, 420, 0.32],
+      [3060, 510, 0.30]
     ];
-    const groupCenters = [];
-    platformGroups.forEach(g => {
-      this.add.image(g.x, g.y, 'platform-strip')
-        .setScale(g.scale)
-        .setDepth(-3);
-
-      const stripW = 720;
-      const stripH = 217;
-      const platformCentersX = [115, 358, 600];
-      const woodTopY = 22;
-      const bodyW = 210;
-      const bodyH = 60;
-
-      platformCentersX.forEach(px => {
-        const wx = g.x + (px - stripW / 2) * g.scale;
-        const wy = g.y + (woodTopY + bodyH / 2 - stripH / 2) * g.scale;
-        const body = this.platforms.create(wx, wy, 'blank');
-        body.setVisible(false);
-        body.setScale(bodyW * g.scale, bodyH * g.scale);
-        body.refreshBody();
-        groupCenters.push({ x: wx, y: wy, w: bodyW * g.scale });
-      });
+    const platformBoxes = [];
+    platformList.forEach(([x, y, scale]) => {
+      const p = this.platforms.create(x, y, 'platform-strip');
+      p.setScale(scale);
+      p.refreshBody();
+      platformBoxes.push({ x, w: p.displayWidth });
     });
 
-    const isOnPlatform = (x) => groupCenters.some(c => Math.abs(c.x - x) < (c.w / 2 + 30));
+    const isOnPlatform = (x) => platformBoxes.some(b => Math.abs(b.x - x) < (b.w / 2 + 30));
 
     const bushCount = Phaser.Math.Between(10, 16);
     for (let i = 0; i < bushCount; i++) {
@@ -87,11 +79,13 @@ class Level1Scene extends Phaser.Scene {
 
     this.coins = this.physics.add.group({ allowGravity: false });
     const coinPositions = [
-      [300, 600], [900, 600], [1720, 600], [2440, 600], [3120, 600],
-      [447, 477], [540, 477], [631, 477],
-      [1237, 384], [1340, 384], [1441, 384],
-      [2042, 449], [2130, 449], [2216, 449],
-      [2722, 365], [2820, 365], [2916, 365]
+      [400, 540], [620, 540], [840, 540],
+      [1080, 450], [1320, 450],
+      [1580, 370], [1820, 370],
+      [2080, 460], [2300, 460],
+      [2580, 380], [2820, 380],
+      [3060, 470],
+      [250, 600], [950, 600], [1900, 600], [2450, 600], [3250, 600]
     ];
     coinPositions.forEach(([x, y]) => {
       const c = this.coins.create(x, y, 'coin-1');

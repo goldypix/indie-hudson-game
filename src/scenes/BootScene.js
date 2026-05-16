@@ -53,11 +53,6 @@ class BootScene extends Phaser.Scene {
       if (tex) tex.setFilter(Phaser.Textures.FilterMode.LINEAR);
     });
 
-    const g = this.make.graphics({ x: 0, y: 0, add: false });
-    g.fillStyle(0xff0000, 1);
-    g.fillRect(0, 0, 1, 1);
-    g.generateTexture('blank', 1, 1);
-    g.destroy();
 
     this.anims.create({
       key: 'indie-idle',
