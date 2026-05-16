@@ -102,7 +102,7 @@ class Level1Scene extends Phaser.Scene {
 
     this.projectiles = this.physics.add.group({ allowGravity: false });
 
-    this.flag = this.physics.add.staticSprite(this.worldWidth - 150, 658, 'flag-1');
+    this.flag = this.physics.add.staticSprite(this.worldWidth - 150, 670, 'flag-1');
     this.flag.setOrigin(0.5, 1).setScale(0.85).refreshBody();
     this.flag.body.setSize(40, 120).setOffset(80, 30);
     this.flag.play('flag-wave');
