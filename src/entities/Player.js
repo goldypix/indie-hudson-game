@@ -11,8 +11,8 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     this.animDisplayHeights = {
       'indie-idle': 140,
       'indie-run':  140,
-      'indie-jump-rise': 168,
-      'indie-jump-land': 168
+      'indie-jump-rise': 202,
+      'indie-jump-land': 202
     };
     this.applyDisplayHeight();
     this.refreshBody();
