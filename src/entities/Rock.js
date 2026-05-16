@@ -12,7 +12,7 @@ class Rock extends Phaser.Physics.Arcade.Sprite {
     const texW = this.texture.getSourceImage().width;
     this.setScale(this.targetDisplayHeight / texH);
 
-    const r = Math.min(texW, texH) * 0.48;
+    const r = Math.min(texW, texH) * 0.44;
     this.body.setCircle(r, texW / 2 - r, texH / 2 - r);
 
     this.direction = -1;

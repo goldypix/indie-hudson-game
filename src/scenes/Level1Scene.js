@@ -10,11 +10,11 @@ class Level1Scene extends Phaser.Scene {
     this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0xAEDDF7)
       .setOrigin(0, 0).setScrollFactor(0).setDepth(-110);
 
-    const groundCanvasY = 1280;
     const hillsTileH = 720;
+    const hillsBottomY = 1040;
     this.bgHills = this.add.tileSprite(
       0,
-      groundCanvasY - hillsTileH,
+      hillsBottomY - hillsTileH,
       this.scale.width,
       hillsTileH,
       'hills'
@@ -69,7 +69,7 @@ class Level1Scene extends Phaser.Scene {
       let bx; let tries = 0;
       do { bx = Phaser.Math.Between(40, this.worldWidth - 40); tries++; }
       while (isOnPlatform(bx) && tries < 8);
-      this.add.image(bx, Phaser.Math.Between(660, 670), 'bush')
+      this.add.image(bx, Phaser.Math.Between(668, 674), 'bush')
         .setOrigin(0.5, 1)
         .setScale(Phaser.Math.FloatBetween(0.32, 0.55))
         .setFlipX(Math.random() < 0.5)
@@ -81,7 +81,7 @@ class Level1Scene extends Phaser.Scene {
       let fx; let tries = 0;
       do { fx = Phaser.Math.Between(20, this.worldWidth - 20); tries++; }
       while (isOnPlatform(fx) && tries < 8);
-      this.add.image(fx, Phaser.Math.Between(658, 670), 'flower')
+      this.add.image(fx, Phaser.Math.Between(666, 672), 'flower')
         .setOrigin(0.5, 1)
         .setScale(Phaser.Math.FloatBetween(0.17, 0.28))
         .setFlipX(Math.random() < 0.5)
@@ -168,19 +168,7 @@ class Level1Scene extends Phaser.Scene {
 
   spawnRock() {
     if (!this.player) return;
-    const cam = this.cameras.main;
-    const viewWorldW = cam.width / cam.zoom;
-    const camLeft = cam.scrollX;
-    const camRight = camLeft + viewWorldW;
-    const fromLeft = Math.random() < 0.4;
-    let x;
-    if (fromLeft) {
-      x = Math.max(60, camLeft - 80);
-    } else {
-      x = Math.min(this.worldWidth - 60, camRight + 80);
-    }
-    const r = new Rock(this, x, 600);
-    if (fromLeft) r.direction = 1;
+    const r = new Rock(this, this.worldWidth - 30, 600);
     this.rocks.add(r);
   }
 
@@ -205,6 +193,14 @@ class Level1Scene extends Phaser.Scene {
     const stomp = player.body.velocity.y > 0 && player.y < rock.y;
     if (stomp) {
       rock.squish();
+      const visibleRockTopY = rock.y - rock.displayHeight / 2;
+      const animKey = (player.anims.currentAnim && player.anims.currentAnim.key) || '';
+      const tuckedFeetOffsetByAnim = {
+        'indie-jump-rise': -28,
+        'indie-jump-land': -8
+      };
+      const feetOffset = tuckedFeetOffsetByAnim[animKey] || 0;
+      player.y = visibleRockTopY - feetOffset;
       player.setVelocityY(-480);
       this.bumpScore(2);
       return;
