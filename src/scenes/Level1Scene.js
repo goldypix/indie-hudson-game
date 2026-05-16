@@ -7,24 +7,14 @@ class Level1Scene extends Phaser.Scene {
     this.worldHeight = 720;
     this.physics.world.setBounds(0, 0, this.worldWidth, this.worldHeight);
 
-    this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0xAEDDF7)
-      .setOrigin(0, 0).setScrollFactor(0).setDepth(-110);
-
-    const hillsScale = 0.72;
-    const hillsTileH = 720 * hillsScale;
-    const hillsBottomY = 1020;
-    this.bgHills = this.add.tileSprite(
-      0,
-      hillsBottomY - hillsTileH,
-      this.scale.width,
-      hillsTileH,
-      'hills'
-    )
+    const hillsTexH = 967;
+    const bgScale = this.scale.height / hillsTexH;
+    this.bgHills = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, 'hills')
       .setOrigin(0, 0)
       .setScrollFactor(0)
       .setDepth(-100);
-    this.bgHills.tileScaleX = hillsScale;
-    this.bgHills.tileScaleY = hillsScale;
+    this.bgHills.tileScaleX = bgScale;
+    this.bgHills.tileScaleY = bgScale;
 
     const cloudCount = Phaser.Math.Between(18, 24);
     for (let i = 0; i < cloudCount; i++) {
@@ -34,7 +24,7 @@ class Level1Scene extends Phaser.Scene {
         'cloud'
       )
         .setScrollFactor(Phaser.Math.FloatBetween(0.3, 0.55))
-        .setScale(Phaser.Math.FloatBetween(0.14, 0.55))
+        .setScale(Phaser.Math.FloatBetween(0.28, 1.10))
         .setAlpha(Phaser.Math.FloatBetween(0.80, 1))
         .setFlipX(Math.random() < 0.5)
         .setDepth(-50);
@@ -167,7 +157,6 @@ class Level1Scene extends Phaser.Scene {
 
     this.cameras.main.setBounds(0, 0, this.worldWidth, this.worldHeight);
     this.cameras.main.setRoundPixels(true);
-    this.cameras.main.startFollow(this.player, true, 1, 1);
 
     this.score = 0;
     this.lives = 3;
@@ -190,6 +179,25 @@ class Level1Scene extends Phaser.Scene {
     this.player.update(time);
     if (this.hudson) this.hudson.update(time);
     this.rocks.children.iterate(r => { if (r && r.active) r.update(); });
+
+    const cam = this.cameras.main;
+    const midX = (this.player.x + this.hudson.x) / 2;
+    const viewW = cam.width / cam.zoom;
+    const maxScrollX = Math.max(0, this.worldWidth - viewW);
+    cam.scrollX = Phaser.Math.Clamp(midX - viewW / 2, 0, maxScrollX);
+
+    const margin = 60;
+    const minX = cam.scrollX + margin;
+    const maxX = cam.scrollX + viewW - margin;
+    [this.player, this.hudson].forEach(p => {
+      if (p.x < minX) {
+        p.x = minX;
+        if (p.body.velocity.x < 0) p.setVelocityX(0);
+      } else if (p.x > maxX) {
+        p.x = maxX;
+        if (p.body.velocity.x > 0) p.setVelocityX(0);
+      }
+    });
   }
 
   scheduleNextRock() {
@@ -203,7 +211,7 @@ class Level1Scene extends Phaser.Scene {
 
   spawnRock() {
     if (!this.player) return;
-    if (this.rocks.countActive(true) >= 4) return;
+    if (this.rocks.countActive(true) >= 3) return;
     const r = new Rock(this, this.worldWidth - 30, 600);
     this.rocks.add(r);
   }

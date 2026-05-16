@@ -118,19 +118,14 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (this.canEat) {
-      this.scene_.rocks.children.iterate(r => {
-        if (r && r.beingSucked) {
-          r.beingSucked = false;
-          if (r.body) r.body.allowGravity = true;
-        }
-      });
-
       if (this.cheeksFull && eatJustPressed) {
         this.spit();
-      }
-
-      if (eatHeld && !this.cheeksFull) {
+      } else if (eatHeld && !this.cheeksFull) {
         this.applySuckPull();
+      } else if (this.suckTarget) {
+        if (this.suckTarget.active && this.suckTarget.body) this.suckTarget.body.allowGravity = true;
+        this.suckTarget.beingSucked = false;
+        this.suckTarget = null;
       }
     }
 
@@ -175,7 +170,13 @@ class Player extends Phaser.Physics.Arcade.Sprite {
       }
     });
 
+    if (this.suckTarget && this.suckTarget !== nearest) {
+      if (this.suckTarget.active && this.suckTarget.body) this.suckTarget.body.allowGravity = true;
+      this.suckTarget.beingSucked = false;
+      this.suckTarget = null;
+    }
     if (!nearest) return;
+    this.suckTarget = nearest;
 
     const dx = this.x - nearest.x;
     const dy = (this.y - 40) - nearest.y;

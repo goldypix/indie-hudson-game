@@ -38,7 +38,7 @@ class BootScene extends Phaser.Scene {
     this.load.image('bush', 'assets/world/bush_01_v01.png');
     this.load.image('flower', 'assets/world/flower_01_v01.png');
     this.load.image('platform-strip', 'assets/world/platform_v01.png');
-    this.load.image('hills', 'assets/backgrounds/hills-tile-v01.png');
+    this.load.image('hills', 'assets/backgrounds/hills-tile-blurred-v03.jpg');
     this.load.image('ground-tile', 'assets/backgrounds/ground-tile-v01.png');
 
     for (let i = 1; i <= 6; i++) {
