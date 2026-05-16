@@ -59,7 +59,7 @@ class Level1Scene extends Phaser.Scene {
       let bx; let tries = 0;
       do { bx = Phaser.Math.Between(40, this.worldWidth - 40); tries++; }
       while (isOnPlatform(bx) && tries < 8);
-      this.add.image(bx, Phaser.Math.Between(656, 668), 'bush')
+      this.add.image(bx, Phaser.Math.Between(670, 680), 'bush')
         .setOrigin(0.5, 1)
         .setScale(Phaser.Math.FloatBetween(0.20, 0.36))
         .setFlipX(Math.random() < 0.5)
@@ -102,7 +102,7 @@ class Level1Scene extends Phaser.Scene {
 
     this.projectiles = this.physics.add.group({ allowGravity: false });
 
-    this.flag = this.physics.add.staticSprite(this.worldWidth - 150, 590, 'flag-1');
+    this.flag = this.physics.add.staticSprite(this.worldWidth - 150, 658, 'flag-1');
     this.flag.setOrigin(0.5, 1).setScale(0.85).refreshBody();
     this.flag.body.setSize(40, 120).setOffset(80, 30);
     this.flag.play('flag-wave');
