@@ -11,7 +11,8 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     this.animDisplayHeights = {
       'indie-idle': 140,
       'indie-run':  140,
-      'indie-jump': 168
+      'indie-jump-rise': 168,
+      'indie-jump-land': 168
     };
     this.applyDisplayHeight();
     this.refreshBody();
@@ -56,11 +57,13 @@ class Player extends Phaser.Physics.Arcade.Sprite {
 
     let animKey;
     if (s === 'running') animKey = 'indie-run';
-    else if (s === 'jumping' || s === 'falling') animKey = 'indie-jump';
+    else if (s === 'jumping' || s === 'falling') animKey = 'indie-jump-rise';
+    else if (s === 'landing') animKey = 'indie-jump-land';
     else animKey = 'indie-idle';
 
     const current = this.anims.currentAnim;
-    if (!current || current.key !== animKey || !this.anims.isPlaying) {
+    const loopingNotPlaying = current && current.key === animKey && current.repeat === -1 && !this.anims.isPlaying;
+    if (!current || current.key !== animKey || loopingNotPlaying) {
       this.play(animKey, true);
       this.applyDisplayHeight();
       this.refreshBody();
@@ -89,10 +92,10 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     const grounded = this.body.blocked.down;
-    if (grounded && !this.wasGroundedLastFrame) {
+    const wasGrounded = this.wasGroundedLastFrame;
+    if (grounded && !wasGrounded) {
       this.jumpsLeft = this.maxJumps;
     }
-    this.wasGroundedLastFrame = grounded;
 
     if (jump && this.jumpsLeft > 0) {
       const isDouble = this.jumpsLeft < this.maxJumps;
@@ -104,12 +107,17 @@ class Player extends Phaser.Physics.Arcade.Sprite {
       if (eatJustPressed) this.spit();
     }
 
+    const playingLand = this.anims.currentAnim && this.anims.currentAnim.key === 'indie-jump-land' && this.anims.isPlaying;
     if (this.cheeksFull) {
       this.setStateLabel('cheeksFull');
     } else if (eatHeld) {
       this.setStateLabel('mouthOpen');
     } else if (!grounded) {
       this.setStateLabel(this.body.velocity.y < 0 ? 'jumping' : 'falling');
+    } else if (!wasGrounded && grounded) {
+      this.setStateLabel('landing');
+    } else if (playingLand) {
+      // hold while the landing crouch plays out
     } else if (left || right) {
       this.setStateLabel('running');
     } else {
@@ -121,6 +129,8 @@ class Player extends Phaser.Physics.Arcade.Sprite {
       this.clearTint();
       this.setAlpha(1);
     }
+
+    this.wasGroundedLastFrame = grounded;
   }
 
   isMouthOpen() {

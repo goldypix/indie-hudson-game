@@ -72,8 +72,14 @@ class BootScene extends Phaser.Scene {
       repeat: -1
     });
     this.anims.create({
-      key: 'indie-jump',
-      frames: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => ({ key: `indie-jump-${i}` })),
+      key: 'indie-jump-rise',
+      frames: [1, 2, 3, 4, 5].map(i => ({ key: `indie-jump-${i}` })),
+      frameRate: 22,
+      repeat: 0
+    });
+    this.anims.create({
+      key: 'indie-jump-land',
+      frames: [7, 8, 9].map(i => ({ key: `indie-jump-${i}` })),
       frameRate: 18,
       repeat: 0
     });
