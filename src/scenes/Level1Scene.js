@@ -110,7 +110,7 @@ class Level1Scene extends Phaser.Scene {
     this.player = new Player(this, 100, 500);
 
     this.physics.add.collider(this.player, this.platforms);
-    this.physics.add.collider(this.rocks, this.platforms);
+    this.physics.add.collider(this.rocks, this.platforms, null, (rock, plat) => plat.texture.key === 'ground');
     this.physics.add.collider(this.projectiles, this.platforms, (p) => p.destroy());
     this.physics.add.overlap(this.player, this.coins, this.collectCoin, null, this);
     this.physics.add.overlap(this.player, this.rocks, this.handleRockHit, null, this);
