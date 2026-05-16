@@ -11,19 +11,17 @@ class Level1Scene extends Phaser.Scene {
       .setOrigin(0, 0).setScrollFactor(0).setDepth(-110);
 
     const groundCanvasY = 1280;
-    const skipSkyTex = 240;
-    const visibleTexH = 720 - skipSkyTex;
+    const hillsTileH = 720;
     this.bgHills = this.add.tileSprite(
       0,
-      groundCanvasY - visibleTexH,
+      groundCanvasY - hillsTileH,
       this.scale.width,
-      visibleTexH,
+      hillsTileH,
       'hills'
     )
       .setOrigin(0, 0)
       .setScrollFactor(0)
       .setDepth(-100);
-    this.bgHills.tilePositionY = skipSkyTex;
 
     const cloudCount = Phaser.Math.Between(18, 24);
     for (let i = 0; i < cloudCount; i++) {
@@ -107,10 +105,7 @@ class Level1Scene extends Phaser.Scene {
     });
 
     this.rocks = this.physics.add.group();
-    [780, 1620, 2480].forEach(x => {
-      const r = new Rock(this, x, 600);
-      this.rocks.add(r);
-    });
+    this.scheduleNextRock();
 
     this.projectiles = this.physics.add.group({ allowGravity: false });
 
@@ -120,6 +115,8 @@ class Level1Scene extends Phaser.Scene {
     this.flag.play('flag-wave');
 
     this.player = new Player(this, 100, 500);
+    this.hudson = new Hudson(this, 20, 500, this.player);
+    this.physics.add.collider(this.hudson, this.platforms, null, (h, plat) => plat.texture.key === 'ground-tile');
 
     this.physics.add.collider(this.player, this.platforms);
     this.physics.add.collider(this.rocks, this.platforms, null, (rock, plat) => plat.texture.key === 'ground-tile');
@@ -156,7 +153,35 @@ class Level1Scene extends Phaser.Scene {
     }
     if (this.finished) return;
     this.player.update(this.cursors, this.keys, time);
+    if (this.hudson) this.hudson.update();
     this.rocks.children.iterate(r => { if (r && r.active) r.update(); });
+  }
+
+  scheduleNextRock() {
+    const delay = Phaser.Math.Between(2000, 10000);
+    this.time.delayedCall(delay, () => {
+      if (this.finished) return;
+      this.spawnRock();
+      this.scheduleNextRock();
+    });
+  }
+
+  spawnRock() {
+    if (!this.player) return;
+    const cam = this.cameras.main;
+    const viewWorldW = cam.width / cam.zoom;
+    const camLeft = cam.scrollX;
+    const camRight = camLeft + viewWorldW;
+    const fromLeft = Math.random() < 0.4;
+    let x;
+    if (fromLeft) {
+      x = Math.max(60, camLeft - 80);
+    } else {
+      x = Math.min(this.worldWidth - 60, camRight + 80);
+    }
+    const r = new Rock(this, x, 600);
+    if (fromLeft) r.direction = 1;
+    this.rocks.add(r);
   }
 
   bumpScore(n) {
