@@ -10,16 +10,17 @@ class Level1Scene extends Phaser.Scene {
     this.add.rectangle(0, 0, this.worldWidth, this.worldHeight, 0x87CEEB)
       .setOrigin(0).setScrollFactor(0).setDepth(-100);
 
-    const cloudCount = Phaser.Math.Between(10, 14);
+    const cloudCount = Phaser.Math.Between(18, 24);
     for (let i = 0; i < cloudCount; i++) {
       this.add.image(
         Phaser.Math.Between(40, this.worldWidth - 40),
-        Phaser.Math.Between(40, 240),
+        Phaser.Math.Between(80, 400),
         'cloud'
       )
-        .setScrollFactor(Phaser.Math.FloatBetween(0.3, 0.5))
-        .setScale(Phaser.Math.FloatBetween(0.18, 0.36))
-        .setAlpha(Phaser.Math.FloatBetween(0.85, 1))
+        .setScrollFactor(Phaser.Math.FloatBetween(0.3, 0.55))
+        .setScale(Phaser.Math.FloatBetween(0.14, 0.55))
+        .setAlpha(Phaser.Math.FloatBetween(0.80, 1))
+        .setFlipX(Math.random() < 0.5)
         .setDepth(-50);
     }
 
