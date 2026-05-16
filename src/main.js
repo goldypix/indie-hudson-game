@@ -22,7 +22,7 @@ const config = {
     antialias: true,
     antialiasGL: true,
     pixelArt: false,
-    roundPixels: false,
+    roundPixels: true,
     mipmapFilter: 'LINEAR_MIPMAP_LINEAR'
   },
   scene: [BootScene, Level1Scene]

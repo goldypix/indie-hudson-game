@@ -118,7 +118,8 @@ class Level1Scene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.flag, this.winLevel, null, this);
 
     this.cameras.main.setBounds(0, 0, this.worldWidth, this.worldHeight);
-    this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+    this.cameras.main.setRoundPixels(true);
+    this.cameras.main.startFollow(this.player, true, 0.15, 0.15);
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys('W,A,S,D,E,SPACE,R');
