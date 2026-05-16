@@ -106,7 +106,11 @@ class Level1Scene extends Phaser.Scene {
       [2042, 449], [2130, 449], [2216, 449],
       [2722, 365], [2820, 365], [2916, 365]
     ];
-    coinPositions.forEach(([x, y]) => this.coins.create(x, y, 'coin'));
+    coinPositions.forEach(([x, y]) => {
+      const c = this.coins.create(x, y, 'coin-1');
+      c.setScale(0.45);
+      c.play({ key: 'coin-spin', startFrame: Phaser.Math.Between(0, 5) });
+    });
 
     this.rocks = this.physics.add.group();
     [780, 1620, 2480].forEach(x => {
@@ -116,7 +120,10 @@ class Level1Scene extends Phaser.Scene {
 
     this.projectiles = this.physics.add.group({ allowGravity: false });
 
-    this.flag = this.physics.add.staticSprite(this.worldWidth - 150, 556, 'flag');
+    this.flag = this.physics.add.staticSprite(this.worldWidth - 150, 590, 'flag-1');
+    this.flag.setOrigin(0.5, 1).setScale(0.85).refreshBody();
+    this.flag.body.setSize(40, 120).setOffset(80, 30);
+    this.flag.play('flag-wave');
 
     this.player = new Player(this, 100, 500);
 

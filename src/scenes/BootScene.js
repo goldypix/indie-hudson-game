@@ -26,9 +26,16 @@ class BootScene extends Phaser.Scene {
     this.load.image('flower', 'assets/world/flower_01_v01.png');
     this.load.image('platform-strip', 'assets/world/platform_v01.png');
 
-    this.makeCoinTexture();
+    for (let i = 1; i <= 6; i++) {
+      const n = String(i).padStart(2, '0');
+      this.load.image(`coin-${i}`, `assets/coin-v01/coin-v01_${n}.png`);
+    }
+    for (let i = 1; i <= 4; i++) {
+      const n = String(i).padStart(2, '0');
+      this.load.image(`flag-${i}`, `assets/flag-v01/flag-v01_${n}.png`);
+    }
+
     this.makeGroundTexture();
-    this.makeFlagTexture();
   }
 
   create() {
@@ -37,6 +44,8 @@ class BootScene extends Phaser.Scene {
       ...[1, 2, 3, 4, 5, 6, 7, 8].map(i => `indie-run-${i}`),
       ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => `indie-jump-${i}`),
       ...[1, 2, 3, 4, 5, 6, 7].map(i => `rock-run-${i}`),
+      ...[1, 2, 3, 4, 5, 6].map(i => `coin-${i}`),
+      ...[1, 2, 3, 4].map(i => `flag-${i}`),
       'cloud', 'tree', 'bush', 'flower', 'platform-strip'
     ];
     smooth.forEach(key => {
@@ -74,19 +83,19 @@ class BootScene extends Phaser.Scene {
       frameRate: 10,
       repeat: -1
     });
+    this.anims.create({
+      key: 'coin-spin',
+      frames: [1, 2, 3, 4, 5, 6].map(i => ({ key: `coin-${i}` })),
+      frameRate: 12,
+      repeat: -1
+    });
+    this.anims.create({
+      key: 'flag-wave',
+      frames: [1, 2, 3, 4].map(i => ({ key: `flag-${i}` })),
+      frameRate: 6,
+      repeat: -1
+    });
     this.scene.start('Level1');
-  }
-
-  makeCoinTexture() {
-    const g = this.make.graphics({ x: 0, y: 0, add: false });
-    g.fillStyle(0xFFD700);
-    g.fillCircle(16, 16, 14);
-    g.fillStyle(0xFFEC8B);
-    g.fillCircle(13, 13, 4);
-    g.lineStyle(2, 0xB8860B);
-    g.strokeCircle(16, 16, 14);
-    g.generateTexture('coin', 32, 32);
-    g.destroy();
   }
 
   makeGroundTexture() {
@@ -100,18 +109,6 @@ class BootScene extends Phaser.Scene {
     g.fillCircle(48, 52, 4);
     g.fillCircle(12, 56, 2);
     g.generateTexture('ground', 64, 64);
-    g.destroy();
-  }
-
-  makeFlagTexture() {
-    const g = this.make.graphics({ x: 0, y: 0, add: false });
-    g.fillStyle(0x666666);
-    g.fillRect(28, 0, 6, 200);
-    g.fillStyle(0xE63946);
-    g.fillTriangle(34, 10, 90, 35, 34, 60);
-    g.fillStyle(0x444444);
-    g.fillRect(20, 192, 22, 8);
-    g.generateTexture('flag', 96, 200);
     g.destroy();
   }
 
