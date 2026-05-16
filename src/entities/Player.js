@@ -179,19 +179,22 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     this.suckTarget = nearest;
 
     const dx = this.x - nearest.x;
-    const dy = (this.y - 40) - nearest.y;
+    const dy = (this.y - 50) - nearest.y;
     const d = Math.max(1, Math.sqrt(dx * dx + dy * dy));
     let pullSpeed;
     if (d > 90) {
-      pullSpeed = 200 + 360 * (1 - d / 360);
+      pullSpeed = 250 + 500 * (1 - d / 360);
     } else {
-      pullSpeed = 1100;
+      pullSpeed = 1400;
     }
     nearest.beingSucked = true;
     if (nearest.body) nearest.body.allowGravity = false;
     nearest.setVelocity((dx / d) * pullSpeed, (dy / d) * pullSpeed);
 
-    if (d < 30) {
+    if (d < 40 && !nearest.shrunkBeforeEat) {
+      nearest.shrunkBeforeEat = true;
+      nearest.setScale(nearest.scaleX * 0.5);
+    } else if (nearest.shrunkBeforeEat) {
       this.eatRock(nearest);
     }
   }

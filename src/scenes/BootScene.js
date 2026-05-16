@@ -62,6 +62,7 @@ class BootScene extends Phaser.Scene {
       ...[1, 2, 3, 4, 5, 6, 7, 8].map(i => `hudson-idle-${i}`),
       ...[1, 2, 3, 4, 5, 6, 7, 8].map(i => `hudson-run-${i}`),
       ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => `hudson-jump-${i}`),
+      ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => `indie-suck-${i}`),
       ...[1, 2, 3, 4, 5, 6].map(i => `coin-${i}`),
       ...[1, 2, 3, 4].map(i => `flag-${i}`),
       'cloud', 'tree', 'bush', 'flower', 'platform-strip', 'hills', 'ground-tile'
@@ -98,7 +99,7 @@ class BootScene extends Phaser.Scene {
     });
     this.anims.create({
       key: 'indie-suck',
-      frames: [1, 2, 3, 4, 5].map(i => ({ key: `indie-suck-${i}` })),
+      frames: [1, 2, 3, 4].map(i => ({ key: `indie-suck-${i}` })),
       frameRate: 14,
       repeat: 0
     });
