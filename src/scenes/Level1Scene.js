@@ -168,6 +168,7 @@ class Level1Scene extends Phaser.Scene {
 
   spawnRock() {
     if (!this.player) return;
+    if (this.rocks.countActive(true) >= 4) return;
     const r = new Rock(this, this.worldWidth - 30, 600);
     this.rocks.add(r);
   }
