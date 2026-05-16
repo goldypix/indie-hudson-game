@@ -157,14 +157,16 @@ class Level1Scene extends Phaser.Scene {
 
     this.cameras.main.setBounds(0, 0, this.worldWidth, this.worldHeight);
     this.cameras.main.setRoundPixels(true);
+    this.cameraTarget = this.add.zone(150, 656, 1, 1);
+    this.cameras.main.startFollow(this.cameraTarget, true, 1, 1);
 
     this.score = 0;
-    this.lives = 3;
+    this.lives = 5;
     this.finished = false;
 
     const uiStyle = { fontSize: '28px', color: '#ffffff', stroke: '#000000', strokeThickness: 5, fontFamily: 'system-ui, sans-serif' };
     this.scoreText = this.add.text(20, 16, 'Coins: 0', uiStyle).setScrollFactor(0).setDepth(100);
-    this.livesText = this.add.text(20, 52, 'Lives: 3', { ...uiStyle, color: '#ff8aa0' }).setScrollFactor(0).setDepth(100);
+    this.livesText = this.add.text(20, 52, 'Lives: 5', { ...uiStyle, color: '#ff8aa0' }).setScrollFactor(0).setDepth(100);
     this.hint = this.add.text(20, 92,
       'Indie: Arrows + Space jump, E eat    Hudson: WASD (W = jump)    R: restart',
       { fontSize: '15px', color: '#ffffff', stroke: '#000000', strokeThickness: 3, fontFamily: 'system-ui, sans-serif' }
@@ -175,29 +177,32 @@ class Level1Scene extends Phaser.Scene {
     if (this.bgHills) {
       this.bgHills.tilePositionX = this.cameras.main.scrollX * 0.35;
     }
+    if (this.player && this.hudson && this.cameraTarget) {
+      this.cameraTarget.x = (this.player.x + this.hudson.x) / 2;
+      this.cameraTarget.y = (this.player.y + this.hudson.y) / 2;
+
+      if (!this.finished) {
+        const cam = this.cameras.main;
+        const viewW = cam.width / cam.zoom;
+        const margin = 60;
+        const minX = cam.scrollX + margin;
+        const maxX = cam.scrollX + viewW - margin;
+        [this.player, this.hudson].forEach(p => {
+          if (p.x < minX) {
+            p.x = minX;
+            if (p.body.velocity.x < 0) p.setVelocityX(0);
+          } else if (p.x > maxX) {
+            p.x = maxX;
+            if (p.body.velocity.x > 0) p.setVelocityX(0);
+          }
+        });
+      }
+    }
+
     if (this.finished) return;
     this.player.update(time);
     if (this.hudson) this.hudson.update(time);
     this.rocks.children.iterate(r => { if (r && r.active) r.update(); });
-
-    const cam = this.cameras.main;
-    const midX = (this.player.x + this.hudson.x) / 2;
-    const viewW = cam.width / cam.zoom;
-    const maxScrollX = Math.max(0, this.worldWidth - viewW);
-    cam.scrollX = Phaser.Math.Clamp(midX - viewW / 2, 0, maxScrollX);
-
-    const margin = 60;
-    const minX = cam.scrollX + margin;
-    const maxX = cam.scrollX + viewW - margin;
-    [this.player, this.hudson].forEach(p => {
-      if (p.x < minX) {
-        p.x = minX;
-        if (p.body.velocity.x < 0) p.setVelocityX(0);
-      } else if (p.x > maxX) {
-        p.x = maxX;
-        if (p.body.velocity.x > 0) p.setVelocityX(0);
-      }
-    });
   }
 
   scheduleNextRock() {

@@ -16,7 +16,7 @@ class Rock extends Phaser.Physics.Arcade.Sprite {
     this.body.setCircle(r, texW / 2 - r, texH / 2 - r);
 
     this.direction = -1;
-    this.speed = 180;
+    this.speed = 130;
 
     this.play('rock-run');
   }
