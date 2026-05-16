@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Indie & Hudson Adventure</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      background: #1a1a1a; overflow: hidden;
+      font-family: system-ui, sans-serif;
+      -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+    }
+    body { display: flex; justify-content: center; align-items: center; }
+    #game canvas { display: block; }
+
+    #touch-controls {
+      position: fixed; inset: 0; pointer-events: none; z-index: 10;
+      display: none;
+    }
+    .pad {
+      position: absolute;
+      bottom: calc(env(safe-area-inset-bottom, 0) + 18px);
+      display: flex; gap: 14px; pointer-events: auto;
+      align-items: flex-end;
+    }
+    .pad.left  { left:  calc(env(safe-area-inset-left, 0)  + 18px); }
+    .pad.right { right: calc(env(safe-area-inset-right, 0) + 18px); }
+    .btn {
+      width: 84px; height: 84px; border-radius: 50%;
+      background: rgba(255,255,255,0.30);
+      border: 3px solid rgba(255,255,255,0.75);
+      color: #fff; font-weight: 800; font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      touch-action: none; user-select: none; -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+      padding: 0;
+    }
+    .btn.arrow { font-size: 36px; line-height: 1; }
+    .btn.jump  { background: rgba(255,200,80,0.55); width: 104px; height: 104px; font-size: 18px; }
+    .btn.eat   { background: rgba(255,150,180,0.55); }
+    .btn:active                 { background: rgba(255,255,255,0.65); transform: scale(0.94); }
+    .btn.jump:active            { background: rgba(255,200,80,0.9); }
+    .btn.eat:active             { background: rgba(255,150,180,0.9); }
+    .btn.pressed                { background: rgba(255,255,255,0.65); transform: scale(0.94); }
+    .btn.jump.pressed           { background: rgba(255,200,80,0.9); }
+    .btn.eat.pressed            { background: rgba(255,150,180,0.9); }
+
+    @media (hover: none) and (pointer: coarse) {
+      #touch-controls { display: block; }
+    }
+
+    .portrait-warn {
+      display: none; position: fixed; inset: 0;
+      background: #1a1a1a; color: #fff; z-index: 100;
+      align-items: center; justify-content: center;
+      font-size: 22px; text-align: center; padding: 24px; line-height: 1.5;
+    }
+    @media (orientation: portrait) and (max-width: 900px) {
+      .portrait-warn { display: flex; }
+      #touch-controls { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="game"></div>
+
+  <div id="touch-controls">
+    <div class="pad left">
+      <button class="btn arrow" data-key="ArrowLeft"  data-keycode="37" aria-label="Left">◀</button>
+      <button class="btn arrow" data-key="ArrowRight" data-keycode="39" aria-label="Right">▶</button>
+    </div>
+    <div class="pad right">
+      <button class="btn eat"  data-key="e"         data-keycode="69" aria-label="Eat">EAT</button>
+      <button class="btn jump" data-key="ArrowUp"   data-keycode="38" aria-label="Jump">JUMP</button>
+    </div>
+  </div>
+
+  <div class="portrait-warn">📱↻<br>Rotate your phone sideways<br>to play</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+  <script>
+    const __v = Date.now();
+    [
+      'src/entities/Player.js',
+      'src/entities/Rock.js',
+      'src/scenes/BootScene.js',
+      'src/scenes/Level1Scene.js',
+      'src/touch.js',
+      'src/main.js'
+    ].forEach(s => {
+      document.write(`<script src="${s}?v=${__v}"><\/script>`);
+    });
+  </script>
+</body>
+</html>
