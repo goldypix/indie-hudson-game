@@ -101,6 +101,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
       const isDouble = this.jumpsLeft < this.maxJumps;
       this.setVelocityY(this.jumpVelocity * (isDouble ? 0.88 : 1));
       this.jumpsLeft--;
+      if (isDouble) this.play('indie-jump-rise');
     }
 
     if (this.cheeksFull) {

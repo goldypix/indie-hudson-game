@@ -7,11 +7,23 @@ class Level1Scene extends Phaser.Scene {
     this.worldHeight = 720;
     this.physics.world.setBounds(0, 0, this.worldWidth, this.worldHeight);
 
-    this.add.image(0, 0, 'hills')
+    this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0xAEDDF7)
+      .setOrigin(0, 0).setScrollFactor(0).setDepth(-110);
+
+    const groundCanvasY = 1280;
+    const skipSkyTex = 240;
+    const visibleTexH = 720 - skipSkyTex;
+    this.bgHills = this.add.tileSprite(
+      0,
+      groundCanvasY - visibleTexH,
+      this.scale.width,
+      visibleTexH,
+      'hills'
+    )
       .setOrigin(0, 0)
       .setScrollFactor(0)
-      .setDisplaySize(this.scale.width, this.scale.height)
       .setDepth(-100);
+    this.bgHills.tilePositionY = skipSkyTex;
 
     const cloudCount = Phaser.Math.Between(18, 24);
     for (let i = 0; i < cloudCount; i++) {
@@ -59,9 +71,9 @@ class Level1Scene extends Phaser.Scene {
       let bx; let tries = 0;
       do { bx = Phaser.Math.Between(40, this.worldWidth - 40); tries++; }
       while (isOnPlatform(bx) && tries < 8);
-      this.add.image(bx, Phaser.Math.Between(670, 680), 'bush')
+      this.add.image(bx, Phaser.Math.Between(660, 670), 'bush')
         .setOrigin(0.5, 1)
-        .setScale(Phaser.Math.FloatBetween(0.20, 0.36))
+        .setScale(Phaser.Math.FloatBetween(0.32, 0.55))
         .setFlipX(Math.random() < 0.5)
         .setDepth(-2);
     }
@@ -71,9 +83,9 @@ class Level1Scene extends Phaser.Scene {
       let fx; let tries = 0;
       do { fx = Phaser.Math.Between(20, this.worldWidth - 20); tries++; }
       while (isOnPlatform(fx) && tries < 8);
-      this.add.image(fx, Phaser.Math.Between(662, 674), 'flower')
+      this.add.image(fx, Phaser.Math.Between(658, 670), 'flower')
         .setOrigin(0.5, 1)
-        .setScale(Phaser.Math.FloatBetween(0.11, 0.20))
+        .setScale(Phaser.Math.FloatBetween(0.17, 0.28))
         .setFlipX(Math.random() < 0.5)
         .setDepth(-1);
     }
@@ -139,6 +151,9 @@ class Level1Scene extends Phaser.Scene {
   }
 
   update(time) {
+    if (this.bgHills) {
+      this.bgHills.tilePositionX = this.cameras.main.scrollX * 0.35;
+    }
     if (this.finished) return;
     this.player.update(this.cursors, this.keys, time);
     this.rocks.children.iterate(r => { if (r && r.active) r.update(); });
@@ -162,7 +177,7 @@ class Level1Scene extends Phaser.Scene {
       return;
     }
 
-    const stomp = player.body.velocity.y > 0 && player.body.bottom < rock.body.top + 24;
+    const stomp = player.body.velocity.y > 0 && player.y < rock.y;
     if (stomp) {
       rock.squish();
       player.setVelocityY(-480);
