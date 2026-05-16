@@ -10,8 +10,9 @@ class Level1Scene extends Phaser.Scene {
     this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0xAEDDF7)
       .setOrigin(0, 0).setScrollFactor(0).setDepth(-110);
 
-    const hillsTileH = 720;
-    const hillsBottomY = 1040;
+    const hillsScale = 0.72;
+    const hillsTileH = 720 * hillsScale;
+    const hillsBottomY = 1020;
     this.bgHills = this.add.tileSprite(
       0,
       hillsBottomY - hillsTileH,
@@ -22,6 +23,8 @@ class Level1Scene extends Phaser.Scene {
       .setOrigin(0, 0)
       .setScrollFactor(0)
       .setDepth(-100);
+    this.bgHills.tileScaleX = hillsScale;
+    this.bgHills.tileScaleY = hillsScale;
 
     const cloudCount = Phaser.Math.Between(18, 24);
     for (let i = 0; i < cloudCount; i++) {
@@ -59,6 +62,9 @@ class Level1Scene extends Phaser.Scene {
       const p = this.platforms.create(x, y, 'platform-strip');
       p.setScale(scale);
       p.refreshBody();
+      const tightW = p.displayWidth * 0.86;
+      p.body.setSize(tightW, p.displayHeight);
+      p.body.position.x = p.x - tightW / 2;
       platformBoxes.push({ x, w: p.displayWidth });
     });
 
@@ -114,25 +120,54 @@ class Level1Scene extends Phaser.Scene {
     this.flag.body.setSize(40, 120).setOffset(80, 30);
     this.flag.play('flag-wave');
 
-    this.player = new Player(this, 100, 500);
-    this.hudson = new Hudson(this, 20, 500, this.player);
-    this.physics.add.collider(this.hudson, this.platforms, null, (h, plat) => plat.texture.key === 'ground-tile');
+    this.cursors = this.input.keyboard.createCursorKeys();
+    this.keys = this.input.keyboard.addKeys('W,A,S,D,E,SPACE,Q,R');
+    this.input.keyboard.on('keydown-R', () => this.scene.restart());
 
-    this.physics.add.collider(this.player, this.platforms);
-    this.physics.add.collider(this.rocks, this.platforms, null, (rock, plat) => plat.texture.key === 'ground-tile');
+    this.player = new Player(this, 100, 500, {
+      spritePrefix: 'indie',
+      initialFrame: 2,
+      controls: {
+        left: this.cursors.left,
+        right: this.cursors.right,
+        jump: [this.cursors.up, this.keys.SPACE],
+        eat: this.keys.E
+      },
+      canEat: true
+    });
+    this.hudson = new Player(this, 200, 500, {
+      spritePrefix: 'hudson',
+      initialFrame: 1,
+      animDisplayHeights: {
+        'hudson-idle': 124,
+        'hudson-run': 124,
+        'hudson-jump-rise': 175,
+        'hudson-jump-land': 175
+      },
+      controls: {
+        left: this.keys.A,
+        right: this.keys.D,
+        jump: [this.keys.W],
+        eat: null
+      },
+      canEat: false
+    });
+
+    this.physics.add.collider(this.player,  this.platforms);
+    this.physics.add.collider(this.hudson,  this.platforms);
+    this.physics.add.collider(this.rocks,   this.platforms, null, (rock, plat) => plat.texture.key === 'ground-tile');
     this.physics.add.collider(this.projectiles, this.platforms, (p) => p.destroy());
     this.physics.add.overlap(this.player, this.coins, this.collectCoin, null, this);
+    this.physics.add.overlap(this.hudson, this.coins, this.collectCoin, null, this);
     this.physics.add.overlap(this.player, this.rocks, this.handleRockHit, null, this);
+    this.physics.add.overlap(this.hudson, this.rocks, this.handleRockHit, null, this);
     this.physics.add.overlap(this.projectiles, this.rocks, (p, r) => { p.destroy(); r.squish(); this.bumpScore(2); }, null, this);
     this.physics.add.overlap(this.player, this.flag, this.winLevel, null, this);
+    this.physics.add.overlap(this.hudson, this.flag, this.winLevel, null, this);
 
     this.cameras.main.setBounds(0, 0, this.worldWidth, this.worldHeight);
     this.cameras.main.setRoundPixels(true);
     this.cameras.main.startFollow(this.player, true, 1, 1);
-
-    this.cursors = this.input.keyboard.createCursorKeys();
-    this.keys = this.input.keyboard.addKeys('W,A,S,D,E,SPACE,R');
-    this.input.keyboard.on('keydown-R', () => this.scene.restart());
 
     this.score = 0;
     this.lives = 3;
@@ -142,7 +177,7 @@ class Level1Scene extends Phaser.Scene {
     this.scoreText = this.add.text(20, 16, 'Coins: 0', uiStyle).setScrollFactor(0).setDepth(100);
     this.livesText = this.add.text(20, 52, 'Lives: 3', { ...uiStyle, color: '#ff8aa0' }).setScrollFactor(0).setDepth(100);
     this.hint = this.add.text(20, 92,
-      'Arrow keys / WASD: move    Up / Space: jump    E: eat (hold) / spit (tap)    R: restart',
+      'Indie: Arrows + Space jump, E eat    Hudson: WASD (W = jump)    R: restart',
       { fontSize: '15px', color: '#ffffff', stroke: '#000000', strokeThickness: 3, fontFamily: 'system-ui, sans-serif' }
     ).setScrollFactor(0).setDepth(100);
   }
@@ -152,8 +187,8 @@ class Level1Scene extends Phaser.Scene {
       this.bgHills.tilePositionX = this.cameras.main.scrollX * 0.35;
     }
     if (this.finished) return;
-    this.player.update(this.cursors, this.keys, time);
-    if (this.hudson) this.hudson.update();
+    this.player.update(time);
+    if (this.hudson) this.hudson.update(time);
     this.rocks.children.iterate(r => { if (r && r.active) r.update(); });
   }
 

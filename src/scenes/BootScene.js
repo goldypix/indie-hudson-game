@@ -28,6 +28,10 @@ class BootScene extends Phaser.Scene {
       this.load.image(`hudson-idle-${i}`, `assets/sprites/hudson-idle-v01/hudson-idle-v01_${n}.png`);
       this.load.image(`hudson-run-${i}`,  `assets/sprites/hudson-run-v01/hudson-run-v01_${n}.png`);
     }
+    for (let i = 1; i <= 9; i++) {
+      const n = String(i).padStart(2, '0');
+      this.load.image(`hudson-jump-${i}`, `assets/sprites/hudson-jump-v01/hudson-jump-v01_${n}.png`);
+    }
 
     this.load.image('cloud', 'assets/world/cloud_01_v01.png');
     this.load.image('tree', 'assets/world/tree_01_v01.png');
@@ -57,6 +61,7 @@ class BootScene extends Phaser.Scene {
       ...[1, 2, 3, 4, 5, 6, 7].map(i => `rock-run-${i}`),
       ...[1, 2, 3, 4, 5, 6, 7, 8].map(i => `hudson-idle-${i}`),
       ...[1, 2, 3, 4, 5, 6, 7, 8].map(i => `hudson-run-${i}`),
+      ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => `hudson-jump-${i}`),
       ...[1, 2, 3, 4, 5, 6].map(i => `coin-${i}`),
       ...[1, 2, 3, 4].map(i => `flag-${i}`),
       'cloud', 'tree', 'bush', 'flower', 'platform-strip', 'hills', 'ground-tile'
@@ -120,6 +125,18 @@ class BootScene extends Phaser.Scene {
       frames: [1, 2, 3, 4, 5, 6, 7, 8].map(i => ({ key: `hudson-run-${i}` })),
       frameRate: 14,
       repeat: -1
+    });
+    this.anims.create({
+      key: 'hudson-jump-rise',
+      frames: [1, 2, 3, 4].map(i => ({ key: `hudson-jump-${i}` })),
+      frameRate: 18,
+      repeat: 0
+    });
+    this.anims.create({
+      key: 'hudson-jump-land',
+      frames: [7, 8, 9].map(i => ({ key: `hudson-jump-${i}` })),
+      frameRate: 14,
+      repeat: 0
     });
     this.anims.create({
       key: 'coin-spin',

@@ -1,26 +1,32 @@
 class Player extends Phaser.Physics.Arcade.Sprite {
-  constructor(scene, x, y) {
-    super(scene, x, y, 'indie-idle-2');
+  constructor(scene, x, y, opts = {}) {
+    const prefix = opts.spritePrefix || 'indie';
+    const initialFrame = opts.initialFrame || 2;
+    super(scene, x, y, `${prefix}-idle-${initialFrame}`);
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
     this.scene_ = scene;
+    this.prefix = prefix;
+    this.controls = opts.controls || null;
+    this.canEat = opts.canEat !== false;
+
     this.setCollideWorldBounds(true);
     this.setOrigin(0.5, 0.97);
 
-    this.animDisplayHeights = {
-      'indie-idle': 140,
-      'indie-run':  140,
-      'indie-jump-rise': 202,
-      'indie-jump-land': 202,
-      'indie-suck':         140,
-      'indie-cheeks-full':  140
+    this.animDisplayHeights = opts.animDisplayHeights || {
+      [`${prefix}-idle`]: 140,
+      [`${prefix}-run`]:  140,
+      [`${prefix}-jump-rise`]: 202,
+      [`${prefix}-jump-land`]: 202,
+      [`${prefix}-suck`]:         140,
+      [`${prefix}-cheeks-full`]:  140
     };
     this.applyDisplayHeight();
     this.refreshBody();
 
-    this.speed = 280;
-    this.jumpVelocity = -640;
+    this.speed = opts.speed || 280;
+    this.jumpVelocity = opts.jumpVelocity || -640;
     this.maxJumps = 2;
     this.jumpsLeft = this.maxJumps;
     this.wasGroundedLastFrame = false;
@@ -30,11 +36,11 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     this.cheeksFull = false;
     this.invulnerableUntil = 0;
 
-    this.play('indie-idle');
+    this.play(`${prefix}-idle`);
   }
 
   applyDisplayHeight() {
-    const key = (this.anims.currentAnim && this.anims.currentAnim.key) || 'indie-idle';
+    const key = (this.anims.currentAnim && this.anims.currentAnim.key) || `${this.prefix}-idle`;
     const target = this.animDisplayHeights[key] || 140;
     const texH = this.texture.getSourceImage().height;
     this.setScale(target / texH);
@@ -56,12 +62,14 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     else if (!this.invulnerableUntil) this.clearTint();
 
     let animKey;
-    if (s === 'running') animKey = 'indie-run';
-    else if (s === 'jumping' || s === 'falling') animKey = 'indie-jump-rise';
-    else if (s === 'landing') animKey = 'indie-jump-land';
-    else if (s === 'sucking') animKey = 'indie-suck';
-    else if (s === 'cheeksFull') animKey = 'indie-cheeks-full';
-    else animKey = 'indie-idle';
+    if (s === 'running') animKey = `${this.prefix}-run`;
+    else if (s === 'jumping' || s === 'falling') animKey = `${this.prefix}-jump-rise`;
+    else if (s === 'landing') animKey = `${this.prefix}-jump-land`;
+    else if (s === 'sucking') animKey = `${this.prefix}-suck`;
+    else if (s === 'cheeksFull') animKey = `${this.prefix}-cheeks-full`;
+    else animKey = `${this.prefix}-idle`;
+
+    if (!this.scene_.anims.exists(animKey)) animKey = `${this.prefix}-idle`;
 
     const current = this.anims.currentAnim;
     const loopingNotPlaying = current && current.key === animKey && current.repeat === -1 && !this.anims.isPlaying;
@@ -72,14 +80,15 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  update(cursors, keys, time) {
-    const left = cursors.left.isDown || keys.A.isDown;
-    const right = cursors.right.isDown || keys.D.isDown;
-    const jump = Phaser.Input.Keyboard.JustDown(cursors.up)
-      || Phaser.Input.Keyboard.JustDown(keys.W)
-      || Phaser.Input.Keyboard.JustDown(keys.SPACE);
-    const eatHeld = keys.E.isDown;
-    const eatJustPressed = Phaser.Input.Keyboard.JustDown(keys.E);
+  update(time) {
+    const c = this.controls;
+    if (!c) return;
+    const left  = c.left  && c.left.isDown;
+    const right = c.right && c.right.isDown;
+    const jumpKeys = c.jump || [];
+    const jump = jumpKeys.some(k => k && Phaser.Input.Keyboard.JustDown(k));
+    const eatHeld        = this.canEat && c.eat && c.eat.isDown;
+    const eatJustPressed = this.canEat && c.eat && Phaser.Input.Keyboard.JustDown(c.eat);
 
     if (left) {
       this.setVelocityX(-this.speed);
@@ -103,25 +112,29 @@ class Player extends Phaser.Physics.Arcade.Sprite {
       const isDouble = this.jumpsLeft < this.maxJumps;
       this.setVelocityY(this.jumpVelocity * (isDouble ? 0.88 : 1));
       this.jumpsLeft--;
-      if (isDouble) this.play('indie-jump-rise');
-    }
-
-    this.scene_.rocks.children.iterate(r => {
-      if (r && r.beingSucked) {
-        r.beingSucked = false;
-        if (r.body) r.body.allowGravity = true;
+      if (isDouble && this.scene_.anims.exists(`${this.prefix}-jump-rise`)) {
+        this.play(`${this.prefix}-jump-rise`);
       }
-    });
-
-    if (this.cheeksFull && eatJustPressed) {
-      this.spit();
     }
 
-    if (eatHeld && !this.cheeksFull) {
-      this.applySuckPull();
+    if (this.canEat) {
+      this.scene_.rocks.children.iterate(r => {
+        if (r && r.beingSucked) {
+          r.beingSucked = false;
+          if (r.body) r.body.allowGravity = true;
+        }
+      });
+
+      if (this.cheeksFull && eatJustPressed) {
+        this.spit();
+      }
+
+      if (eatHeld && !this.cheeksFull) {
+        this.applySuckPull();
+      }
     }
 
-    const playingLand = this.anims.currentAnim && this.anims.currentAnim.key === 'indie-jump-land' && this.anims.isPlaying;
+    const playingLand = this.anims.currentAnim && this.anims.currentAnim.key === `${this.prefix}-jump-land` && this.anims.isPlaying;
     if (this.cheeksFull) {
       this.setStateLabel('cheeksFull');
     } else if (!grounded) {
