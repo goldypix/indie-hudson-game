@@ -25,6 +25,8 @@ class BootScene extends Phaser.Scene {
     this.load.image('bush', 'assets/world/bush_01_v01.png');
     this.load.image('flower', 'assets/world/flower_01_v01.png');
     this.load.image('platform-strip', 'assets/world/platform_v01.png');
+    this.load.image('hills', 'assets/backgrounds/hills-tile-v01.png');
+    this.load.image('ground-tile', 'assets/backgrounds/ground-tile-v01.png');
 
     for (let i = 1; i <= 6; i++) {
       const n = String(i).padStart(2, '0');
@@ -35,7 +37,6 @@ class BootScene extends Phaser.Scene {
       this.load.image(`flag-${i}`, `assets/flag-v01/flag-v01_${n}.png`);
     }
 
-    this.makeGroundTexture();
   }
 
   create() {
@@ -46,7 +47,7 @@ class BootScene extends Phaser.Scene {
       ...[1, 2, 3, 4, 5, 6, 7].map(i => `rock-run-${i}`),
       ...[1, 2, 3, 4, 5, 6].map(i => `coin-${i}`),
       ...[1, 2, 3, 4].map(i => `flag-${i}`),
-      'cloud', 'tree', 'bush', 'flower', 'platform-strip'
+      'cloud', 'tree', 'bush', 'flower', 'platform-strip', 'hills', 'ground-tile'
     ];
     smooth.forEach(key => {
       const tex = this.textures.get(key);
@@ -97,20 +98,6 @@ class BootScene extends Phaser.Scene {
       repeat: -1
     });
     this.scene.start('Level1');
-  }
-
-  makeGroundTexture() {
-    const g = this.make.graphics({ x: 0, y: 0, add: false });
-    g.fillStyle(0x6BA84F);
-    g.fillRect(0, 0, 64, 16);
-    g.fillStyle(0x8B5A3C);
-    g.fillRect(0, 16, 64, 48);
-    g.fillStyle(0x5A3A26);
-    g.fillCircle(20, 40, 3);
-    g.fillCircle(48, 52, 4);
-    g.fillCircle(12, 56, 2);
-    g.generateTexture('ground', 64, 64);
-    g.destroy();
   }
 
 }

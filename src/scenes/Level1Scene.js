@@ -7,8 +7,11 @@ class Level1Scene extends Phaser.Scene {
     this.worldHeight = 720;
     this.physics.world.setBounds(0, 0, this.worldWidth, this.worldHeight);
 
-    this.add.rectangle(0, 0, this.worldWidth, this.worldHeight, 0x87CEEB)
-      .setOrigin(0).setScrollFactor(0).setDepth(-100);
+    this.add.image(0, 0, 'hills')
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDisplaySize(this.scale.width, this.scale.height)
+      .setDepth(-100);
 
     const cloudCount = Phaser.Math.Between(18, 24);
     for (let i = 0; i < cloudCount; i++) {
@@ -26,8 +29,10 @@ class Level1Scene extends Phaser.Scene {
 
 
     this.platforms = this.physics.add.staticGroup();
-    for (let x = 0; x < this.worldWidth; x += 64) {
-      this.platforms.create(x + 32, 688, 'ground').refreshBody();
+    const gTileW = 200;
+    const gTileH = 72;
+    for (let x = 0; x < this.worldWidth + gTileW; x += gTileW) {
+      this.platforms.create(x, 656 + gTileH / 2, 'ground-tile').refreshBody();
     }
 
     const platformList = [
@@ -105,7 +110,7 @@ class Level1Scene extends Phaser.Scene {
     this.player = new Player(this, 100, 500);
 
     this.physics.add.collider(this.player, this.platforms);
-    this.physics.add.collider(this.rocks, this.platforms, null, (rock, plat) => plat.texture.key === 'ground');
+    this.physics.add.collider(this.rocks, this.platforms, null, (rock, plat) => plat.texture.key === 'ground-tile');
     this.physics.add.collider(this.projectiles, this.platforms, (p) => p.destroy());
     this.physics.add.overlap(this.player, this.coins, this.collectCoin, null, this);
     this.physics.add.overlap(this.player, this.rocks, this.handleRockHit, null, this);
