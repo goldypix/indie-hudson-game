@@ -178,8 +178,8 @@ class Level1Scene extends Phaser.Scene {
       this.bgHills.tilePositionX = this.cameras.main.scrollX * 0.35;
     }
     if (this.player && this.hudson && this.cameraTarget) {
-      this.cameraTarget.x = (this.player.x + this.hudson.x) / 2;
-      this.cameraTarget.y = (this.player.y + this.hudson.y) / 2;
+      this.cameraTarget.x = Math.round((this.player.x + this.hudson.x) / 2);
+      this.cameraTarget.y = Math.round((this.player.y + this.hudson.y) / 2);
     }
 
     if (this.finished) return;
