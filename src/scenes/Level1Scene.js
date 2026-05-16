@@ -180,23 +180,6 @@ class Level1Scene extends Phaser.Scene {
     if (this.player && this.hudson && this.cameraTarget) {
       this.cameraTarget.x = (this.player.x + this.hudson.x) / 2;
       this.cameraTarget.y = (this.player.y + this.hudson.y) / 2;
-
-      if (!this.finished) {
-        const cam = this.cameras.main;
-        const viewW = cam.width / cam.zoom;
-        const margin = 60;
-        const minX = cam.scrollX + margin;
-        const maxX = cam.scrollX + viewW - margin;
-        [this.player, this.hudson].forEach(p => {
-          if (p.x < minX) {
-            p.x = minX;
-            if (p.body.velocity.x < 0) p.setVelocityX(0);
-          } else if (p.x > maxX) {
-            p.x = maxX;
-            if (p.body.velocity.x > 0) p.setVelocityX(0);
-          }
-        });
-      }
     }
 
     if (this.finished) return;
