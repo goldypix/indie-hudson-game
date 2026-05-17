@@ -114,14 +114,36 @@ class Level1Scene extends Phaser.Scene {
     this.keys = this.input.keyboard.addKeys('W,A,S,D,E,SPACE,Q,R');
     this.input.keyboard.on('keydown-R', () => this.scene.restart());
 
+    this.gamepads = new GamepadManager();
+    this.gamepads.attachDebugUI(this);
+    const padIndie  = this.gamepads.slots[0];
+    const padHudson = this.gamepads.slots[1];
+
+    const indieLeft  = new CompositeKey([this.cursors.left,  padIndie.left]);
+    const indieRight = new CompositeKey([this.cursors.right, padIndie.right]);
+    const indieJump  = new CompositeKey([this.cursors.up, this.keys.SPACE, padIndie.jump]);
+    const indieEat   = new CompositeKey([this.keys.E, padIndie.eat]);
+
+    const hudsonLeft  = new CompositeKey([this.keys.A, padHudson.left]);
+    const hudsonRight = new CompositeKey([this.keys.D, padHudson.right]);
+    const hudsonJump  = new CompositeKey([this.keys.W, padHudson.jump]);
+
+    this.restartKey = new CompositeKey([padIndie.restart, padHudson.restart]);
+
+    this.compositeKeys = [
+      indieLeft, indieRight, indieJump, indieEat,
+      hudsonLeft, hudsonRight, hudsonJump,
+      this.restartKey
+    ];
+
     this.player = new Player(this, 100, 500, {
       spritePrefix: 'indie',
       initialFrame: 2,
       controls: {
-        left: this.cursors.left,
-        right: this.cursors.right,
-        jump: [this.cursors.up, this.keys.SPACE],
-        eat: this.keys.E
+        left: indieLeft,
+        right: indieRight,
+        jump: [indieJump],
+        eat: indieEat
       },
       canEat: true
     });
@@ -135,9 +157,9 @@ class Level1Scene extends Phaser.Scene {
         'hudson-jump-land': 175
       },
       controls: {
-        left: this.keys.A,
-        right: this.keys.D,
-        jump: [this.keys.W],
+        left: hudsonLeft,
+        right: hudsonRight,
+        jump: [hudsonJump],
         eat: null
       },
       canEat: false
@@ -168,12 +190,18 @@ class Level1Scene extends Phaser.Scene {
     this.scoreText = this.add.text(20, 16, 'Coins: 0', uiStyle).setScrollFactor(0).setDepth(100);
     this.livesText = this.add.text(20, 52, 'Lives: 5', { ...uiStyle, color: '#ff8aa0' }).setScrollFactor(0).setDepth(100);
     this.hint = this.add.text(20, 92,
-      'Indie: Arrows + Space jump, E eat    Hudson: WASD (W = jump)    R: restart',
+      'Indie: Arrows + Space jump, E eat    Hudson: WASD (W = jump)    R: restart    Gamepads supported (F1 = debug)',
       { fontSize: '15px', color: '#ffffff', stroke: '#000000', strokeThickness: 3, fontFamily: 'system-ui, sans-serif' }
     ).setScrollFactor(0).setDepth(100);
   }
 
   update(time) {
+    if (this.gamepads) this.gamepads.update();
+    if (this.compositeKeys) this.compositeKeys.forEach(k => k.update());
+    if (this.restartKey && Phaser.Input.Keyboard.JustDown(this.restartKey)) {
+      this.scene.restart();
+      return;
+    }
     if (this.bgHills) {
       this.bgHills.tilePositionX = this.cameras.main.scrollX * 0.35;
     }
