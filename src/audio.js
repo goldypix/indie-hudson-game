@@ -80,16 +80,22 @@ const MusicPlayer = {
   }
 };
 
+// Categories that must finish before any other voice line is allowed to play.
+// While one of these is mid-utterance, every other play() call no-ops.
+const PROTECTED_VOICE_CATEGORIES = new Set(['callKoji', 'callPartner', 'spit']);
+
 class VoiceHelper {
   constructor(scene) {
     this.scene = scene;
     this.lastByCategory = {};
     this.minGapMs = 350;
+    this.activeProtected = null;
   }
 
   play(character, category, opts = {}) {
     const lines = VOICE_LINES[character]?.[category];
     if (!lines || lines.length === 0) return;
+    if (this.activeProtected && this.activeProtected.isPlaying) return;
     const now = this.scene.time.now;
     const key = `${character}:${category}`;
     if (now - (this.lastByCategory[key] || 0) < this.minGapMs) return;
@@ -97,7 +103,16 @@ class VoiceHelper {
     const available = lines.filter(k => this.scene.cache.audio.exists(k));
     if (available.length === 0) return;
     const soundKey = Phaser.Utils.Array.GetRandom(available);
-    this.scene.sound.play(soundKey, { volume: opts.volume ?? 0.8 });
+    if (PROTECTED_VOICE_CATEGORIES.has(category)) {
+      const sound = this.scene.sound.add(soundKey, { volume: opts.volume ?? 0.8 });
+      this.activeProtected = sound;
+      const clear = () => { if (this.activeProtected === sound) this.activeProtected = null; };
+      sound.once('complete', clear);
+      sound.once('stop', clear);
+      sound.play();
+    } else {
+      this.scene.sound.play(soundKey, { volume: opts.volume ?? 0.8 });
+    }
     this.lastByCategory[key] = now;
   }
 
