@@ -125,6 +125,10 @@ into `Level1Scene.init(data)` as `{ mode: '1p'|'2p', character: 'indie'|'hudson'
 - `VoiceHelper` is per-scene (`this.voice = new VoiceHelper(this)`). It
   enforces a 350ms gap per category and only plays sounds present in
   `cache.audio` — missing files no-op silently.
+- **Protected categories** (`callKoji`, `callPartner`, `spit`) block all
+  other voice samples while one is playing — they're full phrases and
+  must finish before another line can start. See `PROTECTED_VOICE_CATEGORIES`
+  in `src/audio.js`.
 - Hotkeys: **P** = fullscreen toggle, **O** = FPS overlay toggle,
   **R** = restart level (with current mode/character), **M** = back to menu.
 

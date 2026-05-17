@@ -1,10 +1,19 @@
 # Handoff — Next session pick-up
 
-Last session ended at commit **ae24a24**, deployed and live at
+Last session ended at commit **02b7db0**, deployed and live at
 **https://goldypix.github.io/indie-hudson-game/** and
 **https://goldy.xyz/indie-and-hudson-game/** (Cloudflare Worker proxy).
 
 ## What shipped this session
+
+- **Protected voice lines** — `callKoji`, `callPartner`, and `spit`
+  categories now block other voice samples while playing. A jump/coin/
+  hurt mid-phrase no-ops instead of talking over "koji follow me",
+  "let's go hudson", or "watch out for the rock". Tracked via
+  `VoiceHelper.activeProtected`, cleared on `complete`/`stop`.
+  → commit 9b78d07 (PR #1)
+
+## What shipped previous session
 
 - **Menu scene** at startup: title image + 1P/2P → Indie/Hudson select.
   Keyboard / gamepad / touch nav. M key returns to menu from gameplay.
