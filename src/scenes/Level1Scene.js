@@ -115,6 +115,10 @@ class Level1Scene extends Phaser.Scene {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keys = this.input.keyboard.addKeys('W,A,S,D,E,SPACE,Q,R');
     this.input.keyboard.on('keydown-R', () => this.scene.restart());
+    this.input.keyboard.on('keydown-P', () => {
+      if (this.scale.isFullscreen) this.scale.stopFullscreen();
+      else this.scale.startFullscreen();
+    });
 
     this.gamepads = new GamepadManager();
     this.gamepads.attachDebugUI(this);
@@ -194,6 +198,10 @@ class Level1Scene extends Phaser.Scene {
     const uiStyle = { fontSize: '28px', color: '#ffffff', stroke: '#000000', strokeThickness: 5, fontFamily: 'system-ui, sans-serif' };
     this.scoreText = this.add.text(20, 16, 'Coins: 0', uiStyle).setScrollFactor(0).setDepth(100);
     this.livesText = this.add.text(20, 52, 'Lives: 5', { ...uiStyle, color: '#ff8aa0' }).setScrollFactor(0).setDepth(100);
+
+    this.fpsText = this.add.text(this.scale.width - 20, 16, '', { fontSize: '18px', color: '#9efb9e', stroke: '#000000', strokeThickness: 3, fontFamily: 'system-ui, sans-serif' })
+      .setOrigin(1, 0).setScrollFactor(0).setDepth(100).setVisible(false);
+    this.input.keyboard.on('keydown-O', () => this.fpsText.setVisible(!this.fpsText.visible));
   }
 
   update(time) {
@@ -206,6 +214,9 @@ class Level1Scene extends Phaser.Scene {
     if (this.player && this.hudson && this.cameraTarget) {
       this.cameraTarget.x = Math.round((this.player.x + this.hudson.x) / 2);
       this.cameraTarget.y = Math.round((this.player.y + this.hudson.y) / 2);
+    }
+    if (this.fpsText && this.fpsText.visible) {
+      this.fpsText.setText(`${Math.round(this.game.loop.actualFps)} fps`);
     }
 
     if (this.finished) return;
