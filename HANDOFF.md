@@ -1,76 +1,95 @@
 # Handoff — Next session pick-up
 
-Last session ended at commit **9b8f5e4**, deployed and live at
-**https://goldypix.github.io/indie-hudson-game/**
+Last session ended at commit **ae24a24**, deployed and live at
+**https://goldypix.github.io/indie-hudson-game/** and
+**https://goldy.xyz/indie-and-hudson-game/** (Cloudflare Worker proxy).
 
-## Open / parked work
+## What shipped this session
 
-### 🐛 Background image cropping (being worked on in a parallel session)
-User reported the `assets/backgrounds/hills-tile-blurred-v03.jpg` background
-is missing the top portion (no blue sky visible). A separate concurrent
-Claude Code session is actively working on this in worktree
-`.claude/worktrees/adoring-einstein-9db7b7/` on branch
-`claude/adoring-einstein-9db7b7`. Don't double-work it — coordinate
-or wait for that session to merge before touching the BG layer.
+- **Menu scene** at startup: title image + 1P/2P → Indie/Hudson select.
+  Keyboard / gamepad / touch nav. M key returns to menu from gameplay.
+  → commit 08c55c3
+- **Koji** — dog companion entity that follows whichever player is
+  furthest right. → commit e88ee25
+- **Rock-break animation** (4 frames @ 9fps) plays on stomp/projectile
+  hit, then fades over 800ms after a 3s hold. → commit e88ee25
+- **Cloud parallax** — bigger clouds get higher scrollFactor + depth
+  so they "feel" closer and move faster. → commit 08c55c3
+- **Background** — fit hills tile to visible camera height in world
+  space; swapped to taller `hills-tile-blurred-v04.jpg` for more sky.
+  Sky-blue game backgroundColor set to `#49b8f7` so it matches when
+  jumping above the hills tile. → commit 716146a
+- **Audio system** — voices (jump/hurt/coin/eat/spit/gameOver/callKoji/
+  callPartner), two-track shuffled music (`Mossy Coin Trail 1/2` @ 0.375
+  volume, persists across scene transitions via `MusicPlayer` singleton),
+  game SFX (coin, rock-crumble, surface-aware footsteps grass/wood,
+  random jump SFX 1-4 every jump, bump on side-wall hits).
+  → commits 08c55c3, 6b52c45
+- **Hotkeys** — P toggles fullscreen via Fullscreen API, O toggles a
+  tiny FPS counter (top-right, off by default). → commit c66bc06
+- **Open Graph / Twitter card** — sharing the URL in WhatsApp / iMessage
+  / Twitter renders the game logo as a rich preview card.
+  → commit ae24a24
 
-Current implementation in `Level1Scene.js` (the candidate for replacement):
-```js
-const hillsTexH = 967;
-const bgScale = this.scale.height / hillsTexH;
-this.bgHills = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, 'hills')
-  .setOrigin(0, 0).setScrollFactor(0).setDepth(-100);
-this.bgHills.tileScaleX = bgScale;
-this.bgHills.tileScaleY = bgScale;
-```
+## Architecture additions worth knowing
 
-## What shipped this session (gamepad)
+### Menu → Level1 data flow
+`MenuScene.select()` calls `this.scene.start('Level1', { mode, character })`.
+`Level1Scene.init(data)` reads it, then `create()` conditionally builds
+`this.indie` / `this.hudson` (either may be null) and `this.players` =
+filtered non-null array. All iteration is over `this.players` — no more
+`this.player` global.
 
-- **Gamepad support** — keyboard + Gamepad API merged via a `CompositeKey`
-  wrapper that ORs both input sources with proper rising-edge tracking.
-  Pad slot 0 → Indie, slot 1 → Hudson. Bottom face = jump, left face = eat,
-  Start = restart. D-pad + left stick = move. → commits 167d362, 9b8f5e4
-- **Debug overlay** (off by default; toggle with digit `0` or `-`) shows
-  per-pad: controller ID, pressed button indices, axis values. Useful for
-  diagnosing per-controller mapping quirks.
-- **Per-controller override hook** at `src/gamepad.js:23` (`MAPPING_OVERRIDES`)
-  — currently empty. If a specific 8BitDo / Switch Pro / DualSense reports
-  buttons differently from the W3C Standard Mapping, add an entry there
-  keyed on a substring of `gamepad.id`.
+In 1P mode, the single character is wired with BOTH keyboard schemes
+(arrows + space AND WASD) plus both gamepad slots — so whoever you pick,
+all controls work.
 
-### Architecture: `VirtualKey` + `CompositeKey`
-The Player class uses `Phaser.Input.Keyboard.JustDown(key)` which only
-needs an object with `.isDown` + `._justDown`. `VirtualKey` (gamepad-backed)
-and `CompositeKey` (OR of multiple sources, with rising-edge `_justDown`
-tracked per-frame) both satisfy that interface — so the Player class
-didn't need to change to support pads. Composite key state is refreshed
-each frame at the top of `Level1Scene.update()` before `player.update()`.
+### Audio
+- `src/audio.js` defines `VOICE_FILES` (loader catalogue), `VOICE_LINES`
+  (category → list of keys), `VoiceHelper` (random pick + 350ms gap per
+  category + cache existence check), and `MusicPlayer` (module-level
+  singleton that survives scene transitions).
+- `MusicPlayer.start(this.sound)` is idempotent — called from both
+  `MenuScene.create()` and `Level1Scene.create()`; no-ops if already
+  playing.
+- Player.update plays jump SFX (always, random 1-4), jump voice (65%
+  chance), footsteps every 280ms while running+grounded (surface tracked
+  via the platforms collider callback setting `player.currentSurface =
+  platform.texture.key === 'ground-tile' ? 'grass' : 'wood'`), and bump
+  on the rising edge of `body.blocked.left/right` while moving.
 
-## Gotchas (from prior sessions, still relevant)
+### Deploy plumbing
+- Push to `main` → GitHub Pages rebuilds (~1 min)
+- `goldy.xyz/indie-and-hudson-game/*` is a **Cloudflare Worker proxy**
+  (`indie-and-hudson-proxy`) on account `Andrewgoldsmith@gmail.com's
+  Account`, zone `aca2275cbe3e5999400e0398e6c55bb9`. Two routes bound:
+  `goldy.xyz/indie-and-hudson-game` and `.../*`. Worker strips the
+  prefix and proxies to `goldypix.github.io/indie-hudson-game/`.
 
-- **Gitignore for JPGs:** root-level `.jpeg`/`.jpg` is ignored (test screenshots)
-  but `assets/**/*.jpg` is NOT — pattern is `/*.jpeg`, `/*.jpg` (leading slash).
-- **Phaser `cam.scrollY` reads as `-288`** when world height < camera viewport
-  height; `cam.worldView.y` is the truth. Use `worldView`, not `scrollX/Y`.
-- **`startFollow(zone, true, 1, 1)`** on a virtual midpoint zone is the working
-  two-player camera pattern. Setting `cam.scrollX/Y` directly doesn't stick.
-- **Indie's body top is at sprite.y − 115** (origin 0.97, body 82% of texture).
-  Platforms with body bottom > 541 will block her head when running.
-- **Phaser `anims.create()` silently no-ops if the key exists** — duplicate
-  `create()` calls leave the FIRST definition winning.
-- **Local preview**: `./start.command` boots `python3 server.py 8123` (no-cache
-  headers, Chrome auto-open). Inner-script cache busting via runtime `?v={ts}`,
-  but the parent `index.html` itself is server-cached only by Last-Modified —
-  Safari sometimes caches it stubbornly. Hard reload (Cmd+Option+R) when in doubt.
-- **Concurrent sessions**: when another session has its own running server on
-  8123 bound to a different worktree, your code changes won't be visible there.
-  Start your own server on a different port (e.g. `python3 server.py 8124`)
-  from the canonical main checkout to test your changes.
+## Open / parked
 
-## Next-session first move
+Nothing material. All session asks landed.
 
-1. Wait for the BG-image session to merge (or coordinate with it).
-2. Once user has tested their specific 8BitDo / Switch / PlayStation pads,
-   if any button mapping is off, add a `MAPPING_OVERRIDES` entry in
-   `src/gamepad.js:23`. The debug overlay (digit `0` or `-`) shows the
-   `gamepad.id` substring + actual button indices to use.
-3. Hudson chat-bubble dialogue / story bits are still untouched — phase-2 goal.
+A separate stale worktree exists at
+`.claude/worktrees/gifted-northcutt-5463c9/` from an unrelated earlier
+session, pinned at commit e88ee25. Leave alone unless you know what
+it's for.
+
+## Gotchas
+
+- **Asset paths with spaces** (e.g. `indie-cmon koji.wav`,
+  `Mossy Coin Trail 1.mp3`) are loaded via `encodeURIComponent(key)` so
+  Phaser fetches them as `%20`-encoded URLs. The Python dev server +
+  GitHub Pages decode this fine — no need to rename the files.
+- **OG image** lives at `assets/ui/og-preview.jpg` (213 KB, 1200-wide,
+  flattened JPG of the title PNG). WhatsApp caches link previews
+  aggressively; if a preview looks wrong, force a re-scrape via
+  https://developers.facebook.com/tools/debug/.
+- **Voice / music autoplay** is gated by the browser until first user
+  interaction. Phaser auto-unlocks on first click/keypress/touch, but
+  the very first jump on a fresh page load may swallow its SFX.
+- **Preview-MCP loader** stalls in headless mode loading this game's
+  ~90 assets — testing has to be done in a real browser at
+  `localhost:8123`. Don't trust preview MCP screenshots for verification.
+- All prior session gotchas in CLAUDE.md still apply (gitignore for
+  root jpgs, don't recreate anim keys, etc.).

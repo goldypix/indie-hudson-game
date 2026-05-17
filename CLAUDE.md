@@ -4,6 +4,9 @@ A side-scrolling platformer with Andrew's kids Indie (6) and Hudson (3) as
 characters. Phaser 3 via CDN, no build step.
 
 **Live:** https://goldypix.github.io/indie-hudson-game/
+**Custom domain:** https://goldy.xyz/indie-and-hudson-game/ (Cloudflare
+Worker `indie-and-hudson-proxy` strips the prefix and proxies to GitHub
+Pages — see HANDOFF.md for zone/account IDs)
 **Local:** double-click `start.command` (boots `python3 server.py 8123` with
 no-cache headers + opens Chrome)
 
@@ -20,23 +23,32 @@ no-cache headers + opens Chrome)
 ## File layout
 
 ```
-index.html              # game shell, script loader, viewport meta, touch UI
+index.html              # game shell, script loader, viewport meta, touch UI, OG tags
 server.py               # no-cache static server for local dev
 start.command           # double-clickable launcher (macOS)
 src/
   main.js               # Phaser.Game config (DPR, scale, render, scene list)
+  gamepad.js            # GamepadManager, VirtualKey, CompositeKey (KB+pad OR)
+  audio.js              # VOICE_FILES, VOICE_LINES, VoiceHelper, MusicPlayer
+  touch.js              # touch-button → keyboard-event bridge for mobile
   entities/
     Player.js           # Generic player class — used for both Indie + Hudson
     Rock.js             # Rolling rock enemy
+    Koji.js             # Dog companion (follows rightmost active player)
   scenes/
-    BootScene.js        # asset preload + all anim definitions
+    BootScene.js        # asset preload + all anim definitions, starts Menu
+    MenuScene.js        # title + 1P/2P → Indie/Hudson select
     Level1Scene.js      # world layout, physics, camera, level1 logic
-  touch.js              # touch-button → keyboard-event bridge for mobile
 assets/
   sprites/<char>-<anim>-v<n>/<file>_NN.png   # all character + enemy frames
   backgrounds/                                # hills + ground tiles
   world/                                      # bush, flower, cloud, platform
   coin-v01/, flag-v01/                        # collectibles
+  ui/                                         # title-v1.png, og-preview.jpg
+  audio/
+    kids-voices/                              # per-character voice lines
+    songs/                                    # background music tracks
+    game-sfx/                                 # coin, rock-crumble, steps, jump, bump
 references/                                   # source images, not deployed
 ```
 
@@ -83,15 +95,44 @@ new Player(scene, x, y, {
   at 2); camera zoom = `DPR * 1.25` so world units stay consistent across
   devices.
 - **Camera follows a virtual zone** (`cameraTarget`) updated each frame to
-  the integer-rounded midpoint between both players. Don't set `cam.scrollX/Y`
-  directly — it doesn't stick reliably with Phaser bounds + zoom.
-- **Player velocity is clamped at viewport edges** (margin 60) — that's how
-  the co-op camera lock works. Each player gets velocity-zeroed if pushing
-  past the edge; partner needs to walk in same direction to free them.
+  the integer-rounded midpoint of `this.players` (1 or 2 entries depending
+  on the menu selection). Don't set `cam.scrollX/Y` directly — it doesn't
+  stick reliably with Phaser bounds + zoom.
+- **Player velocity is clamped at viewport edges** (margin 60) in 2P mode
+  only — that's the co-op camera lock; each player gets velocity-zeroed
+  if pushing past the edge, partner has to walk in the same direction to
+  free them. In 1P mode the clamp is skipped.
+
+## Players, mode, and the activeCharacters array
+
+The game can run 1P (Indie or Hudson) or 2P. `MenuScene` chooses; data flows
+into `Level1Scene.init(data)` as `{ mode: '1p'|'2p', character: 'indie'|'hudson'|null }`.
+
+- `this.indie` / `this.hudson` are either Player instances or `null`.
+- `this.players` = `[this.indie, this.hudson].filter(Boolean)` — iterate
+  this for update / collider / camera logic. There is no `this.player`.
+- `this.activeCharacters` = `this.players.map(p => p.prefix)` — used by
+  `VoiceHelper.playForRandomActive(...)` to pick which character voices an
+  ambient line.
+- In 1P mode the single Player gets BOTH keyboard schemes (arrows+space AND
+  WASD) plus both gamepad slots merged into its CompositeKeys.
+
+## Audio
+
+- `MusicPlayer` (in `src/audio.js`) is a module-level singleton — call
+  `MusicPlayer.start(this.sound)` from any scene; it no-ops if already
+  playing, so it survives Menu ↔ Level1 transitions seamlessly.
+- `VoiceHelper` is per-scene (`this.voice = new VoiceHelper(this)`). It
+  enforces a 350ms gap per category and only plays sounds present in
+  `cache.audio` — missing files no-op silently.
+- Hotkeys: **P** = fullscreen toggle, **O** = FPS overlay toggle,
+  **R** = restart level (with current mode/character), **M** = back to menu.
 
 ## Deploy
 
 - `git push` to `main` → GitHub Pages rebuilds automatically (~1 min)
+- `goldy.xyz/indie-and-hudson-game/*` picks up the change automatically
+  via the Cloudflare Worker proxy (no extra deploy step)
 - No CI, no tests, no build step
 
 ## Don't
