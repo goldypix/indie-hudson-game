@@ -4,7 +4,7 @@ window.GAME_DPR = DPR;
 const config = {
   type: Phaser.AUTO,
   parent: 'game',
-  backgroundColor: '#87CEEB',
+  backgroundColor: '#49b8f7',
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

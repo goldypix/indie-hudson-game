@@ -7,11 +7,13 @@ class Level1Scene extends Phaser.Scene {
     this.worldHeight = 720;
     this.physics.world.setBounds(0, 0, this.worldWidth, this.worldHeight);
 
-    const hillsTexH = 967;
-    const bgScale = this.scale.height / hillsTexH;
-    this.bgHills = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, 'hills')
+    const hillsTexH = 1014;
+    const cam = this.cameras.main;
+    const visibleH = cam.height / cam.zoom;
+    const bgScale = visibleH / hillsTexH;
+    this.bgHills = this.add.tileSprite(0, this.worldHeight - visibleH, this.worldWidth, visibleH, 'hills')
       .setOrigin(0, 0)
-      .setScrollFactor(0)
+      .setScrollFactor(0.35, 1)
       .setDepth(-100);
     this.bgHills.tileScaleX = bgScale;
     this.bgHills.tileScaleY = bgScale;
@@ -201,9 +203,6 @@ class Level1Scene extends Phaser.Scene {
     if (this.restartKey && Phaser.Input.Keyboard.JustDown(this.restartKey)) {
       this.scene.restart();
       return;
-    }
-    if (this.bgHills) {
-      this.bgHills.tilePositionX = this.cameras.main.scrollX * 0.35;
     }
     if (this.player && this.hudson && this.cameraTarget) {
       this.cameraTarget.x = Math.round((this.player.x + this.hudson.x) / 2);
