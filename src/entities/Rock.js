@@ -23,7 +23,7 @@ class Rock extends Phaser.Physics.Arcade.Sprite {
 
   update() {
     if (!this.active) return;
-    if (this.beingSucked) return;
+    if (this.beingSucked || this.breaking) return;
     this.setVelocityX(this.direction * this.speed);
 
     if (this.body.blocked.left || this.body.blocked.right) {
@@ -32,6 +32,20 @@ class Rock extends Phaser.Physics.Arcade.Sprite {
   }
 
   squish() {
-    this.disableBody(true, true);
+    if (this.breaking) return;
+    this.breaking = true;
+    this.body.enable = false;
+    this.setVelocity(0, 0);
+    this.y -= 6;
+    this.play('rock-break');
+    this.once(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + 'rock-break', () => {
+      this.scene.tweens.add({
+        targets: this,
+        alpha: 0,
+        delay: 3000,
+        duration: 800,
+        onComplete: () => this.destroy()
+      });
+    });
   }
 }

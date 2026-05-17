@@ -23,6 +23,15 @@ class BootScene extends Phaser.Scene {
       const n = String(i).padStart(2, '0');
       this.load.image(`rock-run-${i}`, `assets/sprites/rock-run-v1/rock-run_${n}.png`);
     }
+    for (let i = 1; i <= 4; i++) {
+      const n = String(i).padStart(2, '0');
+      this.load.image(`rock-break-${i}`, `assets/sprites/rock-break-v01/rock-break-v01_${n}.png`);
+    }
+    for (let i = 1; i <= 4; i++) {
+      const n = String(i).padStart(2, '0');
+      this.load.image(`koji-idle-${i}`, `assets/sprites/koji-idle-v01/koji-idle-v01_${n}.png`);
+      this.load.image(`koji-walk-${i}`, `assets/sprites/koji-walk-v01/koji-walk-v01_${n}.png`);
+    }
     for (let i = 1; i <= 8; i++) {
       const n = String(i).padStart(2, '0');
       this.load.image(`hudson-idle-${i}`, `assets/sprites/hudson-idle-v01/hudson-idle-v01_${n}.png`);
@@ -59,6 +68,9 @@ class BootScene extends Phaser.Scene {
       ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => `indie-jump-${i}`),
       ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => `indie-suck-${i}`),
       ...[1, 2, 3, 4, 5, 6, 7].map(i => `rock-run-${i}`),
+      ...[1, 2, 3, 4].map(i => `rock-break-${i}`),
+      ...[1, 2, 3, 4].map(i => `koji-idle-${i}`),
+      ...[1, 2, 3, 4].map(i => `koji-walk-${i}`),
       ...[1, 2, 3, 4, 5, 6, 7, 8].map(i => `hudson-idle-${i}`),
       ...[1, 2, 3, 4, 5, 6, 7, 8].map(i => `hudson-run-${i}`),
       ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => `hudson-jump-${i}`),
@@ -112,6 +124,24 @@ class BootScene extends Phaser.Scene {
     this.anims.create({
       key: 'rock-run',
       frames: [1, 2, 3, 4, 5, 6, 7].map(i => ({ key: `rock-run-${i}` })),
+      frameRate: 10,
+      repeat: -1
+    });
+    this.anims.create({
+      key: 'rock-break',
+      frames: [1, 2, 3, 4].map(i => ({ key: `rock-break-${i}` })),
+      frameRate: 9,
+      repeat: 0
+    });
+    this.anims.create({
+      key: 'koji-idle',
+      frames: [1, 2, 3, 4].map(i => ({ key: `koji-idle-${i}` })),
+      frameRate: 6,
+      repeat: -1
+    });
+    this.anims.create({
+      key: 'koji-walk',
+      frames: [1, 2, 3, 4].map(i => ({ key: `koji-walk-${i}` })),
       frameRate: 10,
       repeat: -1
     });

@@ -155,8 +155,8 @@ class Level1Scene extends Phaser.Scene {
       animDisplayHeights: {
         'hudson-idle': 124,
         'hudson-run': 124,
-        'hudson-jump-rise': 175,
-        'hudson-jump-land': 175
+        'hudson-jump-rise': 149,
+        'hudson-jump-land': 149
       },
       controls: {
         left: hudsonLeft,
@@ -167,8 +167,11 @@ class Level1Scene extends Phaser.Scene {
       canEat: false
     });
 
+    this.koji = new Koji(this, 80, 620);
+
     this.physics.add.collider(this.player,  this.platforms);
     this.physics.add.collider(this.hudson,  this.platforms);
+    this.physics.add.collider(this.koji,    this.platforms);
     this.physics.add.collider(this.rocks,   this.platforms, null, (rock, plat) => plat.texture.key === 'ground-tile');
     this.physics.add.collider(this.projectiles, this.platforms, (p) => p.destroy());
     this.physics.add.overlap(this.player, this.coins, this.collectCoin, null, this);
@@ -191,10 +194,6 @@ class Level1Scene extends Phaser.Scene {
     const uiStyle = { fontSize: '28px', color: '#ffffff', stroke: '#000000', strokeThickness: 5, fontFamily: 'system-ui, sans-serif' };
     this.scoreText = this.add.text(20, 16, 'Coins: 0', uiStyle).setScrollFactor(0).setDepth(100);
     this.livesText = this.add.text(20, 52, 'Lives: 5', { ...uiStyle, color: '#ff8aa0' }).setScrollFactor(0).setDepth(100);
-    this.hint = this.add.text(20, 92,
-      'Indie: Arrows + Space jump, E eat    Hudson: WASD (W = jump)    R: restart    Gamepads supported',
-      { fontSize: '15px', color: '#ffffff', stroke: '#000000', strokeThickness: 3, fontFamily: 'system-ui, sans-serif' }
-    ).setScrollFactor(0).setDepth(100);
   }
 
   update(time) {
@@ -212,6 +211,10 @@ class Level1Scene extends Phaser.Scene {
     if (this.finished) return;
     this.player.update(time);
     if (this.hudson) this.hudson.update(time);
+    if (this.koji) {
+      const lead = this.hudson && this.hudson.x > this.player.x ? this.hudson : this.player;
+      this.koji.update(lead);
+    }
     this.rocks.children.iterate(r => { if (r && r.active) r.update(); });
 
     const cam = this.cameras.main;
