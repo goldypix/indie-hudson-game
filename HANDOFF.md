@@ -1,104 +1,136 @@
 # Handoff — Next session pick-up
 
-Last session ended at commit **02b7db0**, deployed and live at
+Last session ended at commit **7a98ba8**, deployed and live at
 **https://goldypix.github.io/indie-hudson-game/** and
 **https://goldy.xyz/indie-and-hudson-game/** (Cloudflare Worker proxy).
 
 ## What shipped this session
 
-- **Protected voice lines** — `callKoji`, `callPartner`, and `spit`
-  categories now block other voice samples while playing. A jump/coin/
-  hurt mid-phrase no-ops instead of talking over "koji follow me",
-  "let's go hudson", or "watch out for the rock". Tracked via
-  `VoiceHelper.activeProtected`, cleared on `complete`/`stop`.
-  → commit 9b78d07 (PR #1)
+- **Mobile single-player mode** — on touch devices (matchMedia
+  `hover: none and pointer: coarse`), the menu skips the 1P/2P step and
+  goes straight to INDIE/HUDSON. In 1P mode the unselected character
+  spawns as a follower that walks toward the leader at 95% speed (no
+  jumps, teleport-rescue if it falls >700px behind). Camera focuses on
+  the leader only; the 2P edge-clamp is skipped. Wired via new
+  `opts.follow = { leader, gap }` on Player.
+  → commit b51366c
 
-## What shipped previous session
+- **Mobile end-screen buttons** — game-over and win screens render
+  REPLAY / MENU tap buttons on touch devices instead of the
+  "Press R / Press M" keyboard hint. Desktop flow unchanged.
+  → commit b51366c
 
-- **Menu scene** at startup: title image + 1P/2P → Indie/Hudson select.
-  Keyboard / gamepad / touch nav. M key returns to menu from gameplay.
-  → commit 08c55c3
-- **Koji** — dog companion entity that follows whichever player is
-  furthest right. → commit e88ee25
-- **Rock-break animation** (4 frames @ 9fps) plays on stomp/projectile
-  hit, then fades over 800ms after a 3s hold. → commit e88ee25
-- **Cloud parallax** — bigger clouds get higher scrollFactor + depth
-  so they "feel" closer and move faster. → commit 08c55c3
-- **Background** — fit hills tile to visible camera height in world
-  space; swapped to taller `hills-tile-blurred-v04.jpg` for more sky.
-  Sky-blue game backgroundColor set to `#49b8f7` so it matches when
-  jumping above the hills tile. → commit 716146a
-- **Audio system** — voices (jump/hurt/coin/eat/spit/gameOver/callKoji/
-  callPartner), two-track shuffled music (`Mossy Coin Trail 1/2` @ 0.375
-  volume, persists across scene transitions via `MusicPlayer` singleton),
-  game SFX (coin, rock-crumble, surface-aware footsteps grass/wood,
-  random jump SFX 1-4 every jump, bump on side-wall hits).
-  → commits 08c55c3, 6b52c45
-- **Hotkeys** — P toggles fullscreen via Fullscreen API, O toggles a
-  tiny FPS counter (top-right, off by default). → commit c66bc06
-- **Open Graph / Twitter card** — sharing the URL in WhatsApp / iMessage
-  / Twitter renders the game logo as a rich preview card.
-  → commit ae24a24
+- **Follower immunity to rocks** — `handleRockHit` early-returns when
+  `player.follow` is set, so the AI partner can't be killed off-screen.
+  → commit 950735f
+
+- **Indie jump glitch fix** — user was seeing Indie flash "sideways and
+  large" mid-air on mobile. Culprit was `indie-jump-v01_07.png` (the
+  deep landing crouch — body bent ~90°) playing as part of jump-land.
+  Dropped frame 7 from the anim. Bumped jump-rise/land display height
+  to 188 (~7% taller than idle's 140, down from the previous 44% pop
+  at 202). jump-rise still holds frame 4 (apex tuck) — that was the
+  pose the user actually wants to see.
+  → commits 950735f, 7a98ba8
+
+- **Defensive rotation guard** — `Player.update` zeros `this.rotation`
+  each frame. Cheap safety net; turned out the perceived "rotation"
+  was the bent-over landing frame, not an actual transform, but the
+  guard stays in as belt-and-braces.
+  → commit b51366c
 
 ## Architecture additions worth knowing
 
+### 1P-mode follower wiring (Level1Scene)
+
+In 1P mode, **both** Indie and Hudson always spawn. `indieIsFollower`
+and `hudsonIsFollower` flip based on `this.character`. The follower
+gets `controls: null` and `opts.follow = { leader, gap: 90 }`. The
+non-follower gets the normal CompositeKey wiring.
+
+`this.leader` is set to the controlled character (null in 2P). Camera
+target update reads `this.leader ? [this.leader] : this.players`.
+Edge-clamp gated on `this.mode === '2p' && this.players.length > 1`.
+
+### Player follow mode
+
+`Player.update()` short-circuits to `followUpdate()` when `this.follow`
+is set. followUpdate computes dx from `follow.leader.x`, walks toward
+it at `speed * 0.95` until within `gap`, animates running/idle. No jump
+AI — by design, the user explicitly chose "Just follows, partner can
+get stuck. Simpler." If `dist > 700`, teleport to `leader.x - dir*gap`.
+
+### End-screen helper
+
+`Level1Scene.showEndScreen(lines, color)` centralises win/lose UI.
+Uses `isTouchOnly()` (same matchMedia query as MenuScene) to pick
+between keyboard hint text and tappable REPLAY / MENU buttons.
+
+## Architecture from prior sessions (still current)
+
 ### Menu → Level1 data flow
 `MenuScene.select()` calls `this.scene.start('Level1', { mode, character })`.
-`Level1Scene.init(data)` reads it, then `create()` conditionally builds
-`this.indie` / `this.hudson` (either may be null) and `this.players` =
-filtered non-null array. All iteration is over `this.players` — no more
-`this.player` global.
+`Level1Scene.init(data)` reads it. In 1P mode both characters are now
+constructed but only one is controlled (see above).
 
-In 1P mode, the single character is wired with BOTH keyboard schemes
-(arrows + space AND WASD) plus both gamepad slots — so whoever you pick,
-all controls work.
+In 1P (desktop) the controlled character is wired with BOTH keyboard
+schemes (arrows + space AND WASD) plus both gamepad slots.
 
 ### Audio
-- `src/audio.js` defines `VOICE_FILES` (loader catalogue), `VOICE_LINES`
-  (category → list of keys), `VoiceHelper` (random pick + 350ms gap per
-  category + cache existence check), and `MusicPlayer` (module-level
-  singleton that survives scene transitions).
-- `MusicPlayer.start(this.sound)` is idempotent — called from both
-  `MenuScene.create()` and `Level1Scene.create()`; no-ops if already
-  playing.
-- Player.update plays jump SFX (always, random 1-4), jump voice (65%
-  chance), footsteps every 280ms while running+grounded (surface tracked
-  via the platforms collider callback setting `player.currentSurface =
-  platform.texture.key === 'ground-tile' ? 'grass' : 'wood'`), and bump
-  on the rising edge of `body.blocked.left/right` while moving.
+- `src/audio.js` defines `VOICE_FILES`, `VOICE_LINES`, `VoiceHelper`,
+  `MusicPlayer`. `MusicPlayer.start()` is idempotent across scenes.
+- `callKoji` / `callPartner` / `spit` voice categories are protected —
+  they block other voice samples while playing (tracked via
+  `VoiceHelper.activeProtected`).
+- Player.update plays jump SFX (always, random 1-4), jump voice (65%),
+  footsteps every 280ms while running+grounded (surface tracked via
+  the platforms collider callback), bump on rising edge of
+  `body.blocked.left/right`.
 
 ### Deploy plumbing
 - Push to `main` → GitHub Pages rebuilds (~1 min)
-- `goldy.xyz/indie-and-hudson-game/*` is a **Cloudflare Worker proxy**
+- `goldy.xyz/indie-and-hudson-game/*` is a Cloudflare Worker proxy
   (`indie-and-hudson-proxy`) on account `Andrewgoldsmith@gmail.com's
-  Account`, zone `aca2275cbe3e5999400e0398e6c55bb9`. Two routes bound:
-  `goldy.xyz/indie-and-hudson-game` and `.../*`. Worker strips the
-  prefix and proxies to `goldypix.github.io/indie-hudson-game/`.
+  Account`, zone `aca2275cbe3e5999400e0398e6c55bb9`. Strips the prefix,
+  proxies to `goldypix.github.io/indie-hudson-game/`.
 
 ## Open / parked
 
-Nothing material. All session asks landed.
+The user has **work-in-progress on main** that wasn't part of this
+session — left untouched:
+
+- Modified `assets/sprites/indie-jump-v01/indie-jump-v01_07.png`
+  (the deep crouch frame). Even though the anim no longer references
+  frame 7, the user appears to be revising the source PNG itself —
+  may plan to bring it back into the anim once tamed.
+- New `assets/sprites/indie-shoot-pebbles/` and `assets/sprites/pebbles/`
+  directories — looks like a new shooting / projectile mechanic.
+- Deleted `assets/sprites/hudson-jump-v01/_sheet_transparent.png`
+  (cleanup).
+
+If picking up: ask the user what state this WIP is in before touching
+those paths.
 
 A separate stale worktree exists at
 `.claude/worktrees/gifted-northcutt-5463c9/` from an unrelated earlier
-session, pinned at commit e88ee25. Leave alone unless you know what
-it's for.
+session. Leave alone unless you know what it's for.
 
 ## Gotchas
 
 - **Asset paths with spaces** (e.g. `indie-cmon koji.wav`,
   `Mossy Coin Trail 1.mp3`) are loaded via `encodeURIComponent(key)` so
-  Phaser fetches them as `%20`-encoded URLs. The Python dev server +
-  GitHub Pages decode this fine — no need to rename the files.
-- **OG image** lives at `assets/ui/og-preview.jpg` (213 KB, 1200-wide,
-  flattened JPG of the title PNG). WhatsApp caches link previews
-  aggressively; if a preview looks wrong, force a re-scrape via
+  Phaser fetches them as `%20`-encoded URLs.
+- **OG image** at `assets/ui/og-preview.jpg`. WhatsApp caches link
+  previews aggressively; force re-scrape via
   https://developers.facebook.com/tools/debug/.
 - **Voice / music autoplay** is gated by the browser until first user
-  interaction. Phaser auto-unlocks on first click/keypress/touch, but
-  the very first jump on a fresh page load may swallow its SFX.
+  interaction; the very first jump on a fresh page load may swallow
+  its SFX.
 - **Preview-MCP loader** stalls in headless mode loading this game's
-  ~90 assets — testing has to be done in a real browser at
-  `localhost:8123`. Don't trust preview MCP screenshots for verification.
+  ~90 assets — testing has to be done in a real browser. Don't trust
+  preview MCP screenshots for verification.
+- **In 1P mode the partner can collect coins** (intentional — overlap
+  still fires) but is **immune to rocks** and won't trigger win on flag
+  touch in practice (leader gets there first, since follower trails).
 - All prior session gotchas in CLAUDE.md still apply (gitignore for
   root jpgs, don't recreate anim keys, etc.).
