@@ -1,77 +1,77 @@
 # Handoff — Next session pick-up
 
-Last session ended at commit **7a98ba8**, deployed and live at
-**https://goldypix.github.io/indie-hudson-game/** and
+Last session ended at commit **6fef62a** (PR #3 merged), deployed and
+live at **https://goldypix.github.io/indie-hudson-game/** and
 **https://goldy.xyz/indie-and-hudson-game/** (Cloudflare Worker proxy).
 
 ## What shipped this session
 
-- **Mobile single-player mode** — on touch devices (matchMedia
-  `hover: none and pointer: coarse`), the menu skips the 1P/2P step and
-  goes straight to INDIE/HUDSON. In 1P mode the unselected character
-  spawns as a follower that walks toward the leader at 95% speed (no
-  jumps, teleport-rescue if it falls >700px behind). Camera focuses on
-  the leader only; the 2P edge-clamp is skipped. Wired via new
-  `opts.follow = { leader, gap }` on Player.
-  → commit b51366c
+- **Indie pea-shooter mechanic** — Indie can now eat a rolling rock,
+  hold it, and shoot pebbles back. New `indie-shoot-pre` (wind-up,
+  frames 1-4) and `indie-shoot-post` (recovery, frames 5-7) animations
+  built from the new `indie-shoot-pebbles` sprite sheet. Pebbles fly
+  horizontally with a slight downward bias (`vx = dir*900`, `vy = 140`,
+  `gravity.y = -1100` → net gravity ~300), arc into the rolling-rock
+  path, and `pebble↔rock` overlap triggers `rock.squish()` + score bump.
+  → commit 4a77b9c (PR #3)
 
-- **Mobile end-screen buttons** — game-over and win screens render
-  REPLAY / MENU tap buttons on touch devices instead of the
-  "Press R / Press M" keyboard hint. Desktop flow unchanged.
-  → commit b51366c
+- **Input model rewrite for Indie's eat mechanic** — was press-E /
+  press-E-again, now hold-E to suck and hold, release-E to shoot.
+  `Player.update` tracks `wasEatHeld` and computes `eatJustReleased`
+  each frame. Hudson is unaffected (his `canEat` is false).
 
-- **Follower immunity to rocks** — `handleRockHit` early-returns when
-  `player.follow` is set, so the AI partner can't be killed off-screen.
-  → commit 950735f
+- **`indie-idle-mouth` loop replaces the old `indie-cheeks-full` anim**
+  — cheeks-full was looping suck-frames 7-10 which looked janky. Now
+  uses the dedicated `indie-idle-mouth-v01` sprite sheet (was already
+  tracked at `assets/indie-idle-mouth-v01/` from a prior session but
+  never wired up). Plays as a smooth 6fps loop after rock is eaten.
 
-- **Indie jump glitch fix** — user was seeing Indie flash "sideways and
-  large" mid-air on mobile. Culprit was `indie-jump-v01_07.png` (the
-  deep landing crouch — body bent ~90°) playing as part of jump-land.
-  Dropped frame 7 from the anim. Bumped jump-rise/land display height
-  to 188 (~7% taller than idle's 140, down from the previous 44% pop
-  at 202). jump-rise still holds frame 4 (apex tuck) — that was the
-  pose the user actually wants to see.
-  → commits 950735f, 7a98ba8
-
-- **Defensive rotation guard** — `Player.update` zeros `this.rotation`
-  each frame. Cheap safety net; turned out the perceived "rotation"
-  was the bent-over landing frame, not an actual transform, but the
-  guard stays in as belt-and-braces.
-  → commit b51366c
+- **Timer-driven spit sequence** — old version relied on Phaser's
+  `animationcomplete-{key}` event to chain the wind-up → pebble fire →
+  recovery anims. That was flaky (anim got interrupted by the state
+  machine on the same frame as `spit()` returned, causing visible
+  suck-frame flicker AND occasional "indie stuck in place" when the
+  event didn't fire). Now uses `scene.time.delayedCall` for each phase
+  with a hard failsafe that clears the `shooting` lock after ~2.3s.
 
 ## Architecture additions worth knowing
 
-### 1P-mode follower wiring (Level1Scene)
+### `Player.shooting` lock + early-return
 
-In 1P mode, **both** Indie and Hudson always spawn. `indieIsFollower`
-and `hudsonIsFollower` flip based on `this.character`. The follower
-gets `controls: null` and `opts.follow = { leader, gap: 90 }`. The
-non-follower gets the normal CompositeKey wiring.
+While `this.shooting === true`, `Player.update()` early-returns at the
+top (zeros velocityX, keeps tracking grounded + wasEatHeld). This
+prevents the state machine from clobbering the shoot animation with
+`indie-idle` or `indie-suck`.
 
-`this.leader` is set to the controlled character (null in 2P). Camera
-target update reads `this.leader ? [this.leader] : this.players`.
-Edge-clamp gated on `this.mode === '2p' && this.players.length > 1`.
+Additionally, the moment `spit()` runs (mid-frame inside `update()`),
+the update function early-returns BEFORE reaching the state-machine
+block — otherwise the same frame's `eatHeld=true` would have triggered
+`setStateLabel('sucking')` and overridden the wind-up anim.
 
-### Player follow mode
+### Pea-shooter timing (4 pebbles/sec, 1s hold on frame 4)
 
-`Player.update()` short-circuits to `followUpdate()` when `this.follow`
-is set. followUpdate computes dx from `follow.leader.x`, walks toward
-it at `speed * 0.95` until within `gap`, animates running/idle. No jump
-AI — by design, the user explicitly chose "Just follows, partner can
-get stuck. Simpler." If `dist > 700`, teleport to `leader.x - dir*gap`.
+In `Player.spit()`:
+- `t=0`: play `indie-shoot-pre` (frames 1→4 @ 18fps ≈ 235ms)
+- `t=235ms`: Phaser holds on frame 4 (repeat:0 sprites stop on the
+  last frame). Pebble #1 fires.
+- `t=485ms` / `735ms` / `985ms`: pebbles 2 / 3 / 4
+- `t=1235ms`: play `indie-shoot-post` (frames 5→7 @ 14fps)
+- `t=~1500ms`: `shooting = false`, normal state machine resumes
 
-### End-screen helper
+### `Level1Scene.spawnPebble(x, y, dir)`
 
-`Level1Scene.showEndScreen(lines, color)` centralises win/lose UI.
-Uses `isTouchOnly()` (same matchMedia query as MenuScene) to pick
-between keyboard hint text and tappable REPLAY / MENU buttons.
+Singular, not a burst. Each call creates one pebble with random
+texture (`pebble-1..10`), horizontal velocity, slight initial downward
+velocity, reduced gravity, and a 3.5s auto-destroy. Collides with
+platforms (destroys on hit), overlaps with rocks (destroys + crumbles
+the rock).
 
 ## Architecture from prior sessions (still current)
 
 ### Menu → Level1 data flow
 `MenuScene.select()` calls `this.scene.start('Level1', { mode, character })`.
-`Level1Scene.init(data)` reads it. In 1P mode both characters are now
-constructed but only one is controlled (see above).
+`Level1Scene.init(data)` reads it. In 1P mode both characters are
+constructed but only one is controlled.
 
 In 1P (desktop) the controlled character is wired with BOTH keyboard
 schemes (arrows + space AND WASD) plus both gamepad slots.
@@ -80,36 +80,27 @@ schemes (arrows + space AND WASD) plus both gamepad slots.
 - `src/audio.js` defines `VOICE_FILES`, `VOICE_LINES`, `VoiceHelper`,
   `MusicPlayer`. `MusicPlayer.start()` is idempotent across scenes.
 - `callKoji` / `callPartner` / `spit` voice categories are protected —
-  they block other voice samples while playing (tracked via
-  `VoiceHelper.activeProtected`).
-- Player.update plays jump SFX (always, random 1-4), jump voice (65%),
-  footsteps every 280ms while running+grounded (surface tracked via
-  the platforms collider callback), bump on rising edge of
-  `body.blocked.left/right`.
+  they block other voice samples while playing.
 
 ### Deploy plumbing
 - Push to `main` → GitHub Pages rebuilds (~1 min)
 - `goldy.xyz/indie-and-hudson-game/*` is a Cloudflare Worker proxy
   (`indie-and-hudson-proxy`) on account `Andrewgoldsmith@gmail.com's
-  Account`, zone `aca2275cbe3e5999400e0398e6c55bb9`. Strips the prefix,
-  proxies to `goldypix.github.io/indie-hudson-game/`.
+  Account`, zone `aca2275cbe3e5999400e0398e6c55bb9`.
 
 ## Open / parked
 
-The user has **work-in-progress on main** that wasn't part of this
-session — left untouched:
+The user still has **WIP on main not from this session**:
 
-- Modified `assets/sprites/indie-jump-v01/indie-jump-v01_07.png`
-  (the deep crouch frame). Even though the anim no longer references
-  frame 7, the user appears to be revising the source PNG itself —
-  may plan to bring it back into the anim once tamed.
-- New `assets/sprites/indie-shoot-pebbles/` and `assets/sprites/pebbles/`
-  directories — looks like a new shooting / projectile mechanic.
+- Modified `assets/sprites/indie-jump-v01/indie-jump-v01_07.png` (deep
+  crouch frame revision)
 - Deleted `assets/sprites/hudson-jump-v01/_sheet_transparent.png`
-  (cleanup).
 
-If picking up: ask the user what state this WIP is in before touching
-those paths.
+Ask before touching either.
+
+The previously parked `assets/sprites/indie-shoot-pebbles/` and
+`assets/sprites/pebbles/` folders are **no longer parked** — this
+session committed them as part of the pea-shooter feature.
 
 A separate stale worktree exists at
 `.claude/worktrees/gifted-northcutt-5463c9/` from an unrelated earlier
@@ -117,20 +108,26 @@ session. Leave alone unless you know what it's for.
 
 ## Gotchas
 
-- **Asset paths with spaces** (e.g. `indie-cmon koji.wav`,
-  `Mossy Coin Trail 1.mp3`) are loaded via `encodeURIComponent(key)` so
-  Phaser fetches them as `%20`-encoded URLs.
+- **Claude Preview MCP can't fully boot this game.** The iframe's
+  `AudioContext` is suspended until first interaction, so Phaser's
+  `decodeAudioData` calls stall on ~45 of the voice files. Boot scene
+  stays at ~73% forever, never transitions to Menu. Workaround for
+  inspecting registered anims/textures is to force-empty the load
+  queue + manually call `Boot.create()` — enough to verify wiring but
+  not enough to drive real gameplay. **Verification of game feel has
+  to happen in a real browser via `./start.command`.**
+- **Hold-to-suck / release-to-spit:** if user expects the old
+  press-twice flow, they may release E too soon (mid-suck) and wonder
+  why nothing fires. Release only triggers spit if `cheeksFull` is
+  already true.
+- **Asset paths with spaces** (`indie-cmon koji.wav`, `Mossy Coin
+  Trail 1.mp3`) are loaded via `encodeURIComponent(key)` so Phaser
+  fetches them as `%20`-encoded URLs.
 - **OG image** at `assets/ui/og-preview.jpg`. WhatsApp caches link
   previews aggressively; force re-scrape via
   https://developers.facebook.com/tools/debug/.
 - **Voice / music autoplay** is gated by the browser until first user
-  interaction; the very first jump on a fresh page load may swallow
-  its SFX.
-- **Preview-MCP loader** stalls in headless mode loading this game's
-  ~90 assets — testing has to be done in a real browser. Don't trust
-  preview MCP screenshots for verification.
-- **In 1P mode the partner can collect coins** (intentional — overlap
-  still fires) but is **immune to rocks** and won't trigger win on flag
-  touch in practice (leader gets there first, since follower trails).
-- All prior session gotchas in CLAUDE.md still apply (gitignore for
-  root jpgs, don't recreate anim keys, etc.).
+  interaction.
+- **In 1P mode the partner can collect coins** (intentional) but is
+  **immune to rocks** and won't trigger win on flag touch in practice.
+- All prior session gotchas in CLAUDE.md still apply.

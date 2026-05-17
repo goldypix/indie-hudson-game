@@ -82,8 +82,19 @@ new Player(scene, x, y, {
 });
 ```
 
-`canEat: false` for Hudson — the suck/spit logic short-circuits and the
-`-suck` / `-cheeks-full` anims are never played.
+`canEat: false` for Hudson — the suck / idle-mouth / shoot logic
+short-circuits and `-suck` / `-idle-mouth` / `-shoot-pre` / `-shoot-post`
+anims are never played.
+
+Indie's eat input model is **hold-to-suck, release-to-shoot**. Holding E
+runs `applySuckPull` and plays `indie-suck`. When the rock is consumed,
+`cheeksFull=true` and `indie-idle-mouth` loops while E stays held.
+Releasing E (with `cheeksFull===true`) triggers `spit()`, which sets a
+`shooting` lock and chains `indie-shoot-pre` → 1s frame-4 hold (while
+firing 4 pebbles at 4/sec via `scene.spawnPebble`) → `indie-shoot-post`
+→ idle. The state machine in `Player.update` early-returns whenever
+`shooting === true` to prevent the idle/suck anims from clobbering the
+shoot sequence.
 
 ## Physics conventions
 
