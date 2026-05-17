@@ -115,6 +115,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
       if (isDouble && this.scene_.anims.exists(`${this.prefix}-jump-rise`)) {
         this.play(`${this.prefix}-jump-rise`);
       }
+      this.scene_.voice?.play(this.prefix, 'jump', { chance: 0.55 });
     }
 
     if (this.canEat) {
@@ -150,6 +151,16 @@ class Player extends Phaser.Physics.Arcade.Sprite {
       this.invulnerableUntil = 0;
       this.clearTint();
       this.setAlpha(1);
+    }
+
+    if (this.state_ === 'running' && grounded) {
+      const stepInterval = 280;
+      if (time - (this.lastStepTime || 0) > stepInterval) {
+        this.lastStepTime = time;
+        const surface = this.currentSurface || 'grass';
+        const key = surface === 'wood' ? `sfx-${this.prefix}-step-wood` : 'sfx-step-grass';
+        if (this.scene_.cache.audio.exists(key)) this.scene_.sound.play(key, { volume: 0.35 });
+      }
     }
 
     this.wasGroundedLastFrame = grounded;
@@ -208,6 +219,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     this.cheeksFull = true;
     this.setStateLabel('cheeksFull');
     rock.disableBody(true, true);
+    this.scene_.voice?.play(this.prefix, 'eat');
     return true;
   }
 
@@ -215,6 +227,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     if (!this.cheeksFull) return;
     this.cheeksFull = false;
     this.scene_.spawnProjectile(this.x + this.facing * 40, this.y - 50, this.facing);
+    this.scene_.voice?.play(this.prefix, 'spit');
   }
 
   takeDamage(time) {
@@ -224,6 +237,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     this.setAlpha(0.6);
     this.setVelocityY(-320);
     this.setVelocityX(this.facing * -260);
+    this.scene_.voice?.play(this.prefix, 'hurt');
     return true;
   }
 }

@@ -25,7 +25,7 @@ const config = {
     roundPixels: true,
     mipmapFilter: 'LINEAR'
   },
-  scene: [BootScene, Level1Scene]
+  scene: [BootScene, MenuScene, Level1Scene]
 };
 
 window.__game = new Phaser.Game(config);

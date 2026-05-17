@@ -37,6 +37,7 @@ class Rock extends Phaser.Physics.Arcade.Sprite {
     this.body.enable = false;
     this.setVelocity(0, 0);
     this.y -= 6;
+    if (this.scene.cache.audio.exists('sfx-rock-crumble')) this.scene.sound.play('sfx-rock-crumble', { volume: 0.6 });
     this.play('rock-break');
     this.once(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + 'rock-break', () => {
       this.scene.tweens.add({

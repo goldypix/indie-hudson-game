@@ -49,6 +49,23 @@ class BootScene extends Phaser.Scene {
     this.load.image('platform-strip', 'assets/world/platform_v01.png');
     this.load.image('hills', 'assets/backgrounds/hills-tile-blurred-v04.jpg');
     this.load.image('ground-tile', 'assets/backgrounds/ground-tile-v01.png');
+    this.load.image('title', 'assets/ui/title-v1.png');
+
+    for (const character of Object.keys(VOICE_FILES)) {
+      for (const key of VOICE_FILES[character]) {
+        const file = encodeURIComponent(key) + '.wav';
+        this.load.audio(key, `assets/audio/kids-voices/${file}`);
+      }
+    }
+
+    this.load.audio('music-1', 'assets/audio/songs/' + encodeURIComponent('Mossy Coin Trail 1') + '.mp3');
+    this.load.audio('music-2', 'assets/audio/songs/' + encodeURIComponent('Mossy Coin Trail 2') + '.mp3');
+
+    this.load.audio('sfx-coin',        'assets/audio/game-sfx/coin.mp3');
+    this.load.audio('sfx-rock-crumble','assets/audio/game-sfx/rock-crumble.wav');
+    this.load.audio('sfx-step-grass',  'assets/audio/game-sfx/generic-step-grass1.m4a');
+    this.load.audio('sfx-indie-step-wood',  'assets/audio/game-sfx/indie-step-wood.mp3');
+    this.load.audio('sfx-hudson-step-wood', 'assets/audio/game-sfx/hudson-step-wood.m4a');
 
     for (let i = 1; i <= 6; i++) {
       const n = String(i).padStart(2, '0');
@@ -77,7 +94,7 @@ class BootScene extends Phaser.Scene {
       ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => `indie-suck-${i}`),
       ...[1, 2, 3, 4, 5, 6].map(i => `coin-${i}`),
       ...[1, 2, 3, 4].map(i => `flag-${i}`),
-      'cloud', 'tree', 'bush', 'flower', 'platform-strip', 'hills', 'ground-tile'
+      'cloud', 'tree', 'bush', 'flower', 'platform-strip', 'hills', 'ground-tile', 'title'
     ];
     smooth.forEach(key => {
       const tex = this.textures.get(key);
@@ -181,7 +198,7 @@ class BootScene extends Phaser.Scene {
       frameRate: 6,
       repeat: -1
     });
-    this.scene.start('Level1');
+    this.scene.start('Menu');
   }
 
 }
