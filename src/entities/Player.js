@@ -115,7 +115,11 @@ class Player extends Phaser.Physics.Arcade.Sprite {
       if (isDouble && this.scene_.anims.exists(`${this.prefix}-jump-rise`)) {
         this.play(`${this.prefix}-jump-rise`);
       }
-      this.scene_.voice?.play(this.prefix, 'jump', { chance: 0.55 });
+      const jumpKey = `sfx-jump-${Phaser.Math.Between(1, 4)}`;
+      if (this.scene_.cache.audio.exists(jumpKey)) {
+        this.scene_.sound.play(jumpKey, { volume: 0.4 });
+      }
+      this.scene_.voice?.play(this.prefix, 'jump', { chance: 0.65 });
     }
 
     if (this.canEat) {
@@ -162,6 +166,15 @@ class Player extends Phaser.Physics.Arcade.Sprite {
         if (this.scene_.cache.audio.exists(key)) this.scene_.sound.play(key, { volume: 0.35 });
       }
     }
+
+    const blockedSide = this.body.blocked.left || this.body.blocked.right;
+    const movingHorizontally = Math.abs(this.body.velocity.x) > 30;
+    if (blockedSide && !this.wasBlockedSideLastFrame && movingHorizontally) {
+      if (this.scene_.cache.audio.exists('sfx-bump')) {
+        this.scene_.sound.play('sfx-bump', { volume: 0.4 });
+      }
+    }
+    this.wasBlockedSideLastFrame = blockedSide;
 
     this.wasGroundedLastFrame = grounded;
   }

@@ -66,6 +66,11 @@ class BootScene extends Phaser.Scene {
     this.load.audio('sfx-step-grass',  'assets/audio/game-sfx/generic-step-grass1.m4a');
     this.load.audio('sfx-indie-step-wood',  'assets/audio/game-sfx/indie-step-wood.mp3');
     this.load.audio('sfx-hudson-step-wood', 'assets/audio/game-sfx/hudson-step-wood.m4a');
+    this.load.audio('sfx-jump-1', 'assets/audio/game-sfx/jump1.mp3');
+    this.load.audio('sfx-jump-2', 'assets/audio/game-sfx/jump2.mp3');
+    this.load.audio('sfx-jump-3', 'assets/audio/game-sfx/jump3.mp3');
+    this.load.audio('sfx-jump-4', 'assets/audio/game-sfx/jump4.mp3');
+    this.load.audio('sfx-bump',   'assets/audio/game-sfx/bump2.m4a');
 
     for (let i = 1; i <= 6; i++) {
       const n = String(i).padStart(2, '0');
