@@ -19,7 +19,8 @@ class MenuScene extends Phaser.Scene {
       .setOrigin(0.5, 0)
       .setDisplaySize(titleW, titleH);
 
-    this.step = 'count';
+    this.isTouchOnly = window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    this.step = this.isTouchOnly ? 'char' : 'count';
     this.focusIndex = 0;
     this.buttons = [];
 
@@ -120,7 +121,7 @@ class MenuScene extends Phaser.Scene {
       this.setFocus((this.focusIndex + 1) % this.buttons.length);
     } else if (k === 'Enter' || k === ' ') {
       this.select(this.focusIndex);
-    } else if (k === 'Escape' && this.step === 'char') {
+    } else if (k === 'Escape' && this.step === 'char' && !this.isTouchOnly) {
       this.step = 'count';
       this.renderMenu();
     } else if (k === 'p' || k === 'P') {

@@ -10,6 +10,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     this.prefix = prefix;
     this.controls = opts.controls || null;
     this.canEat = opts.canEat !== false;
+    this.follow = opts.follow || null;
 
     this.setCollideWorldBounds(true);
     this.setOrigin(0.5, 0.97);
@@ -81,6 +82,8 @@ class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   update(time) {
+    if (this.rotation !== 0) this.setRotation(0);
+    if (this.follow) { this.followUpdate(time); return; }
     const c = this.controls;
     if (!c) return;
     const left  = c.left  && c.left.isDown;
@@ -176,6 +179,48 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     }
     this.wasBlockedSideLastFrame = blockedSide;
 
+    this.wasGroundedLastFrame = grounded;
+  }
+
+  followUpdate(time) {
+    const leader = this.follow.leader;
+    const gap = this.follow.gap || 90;
+    if (!leader || !leader.active) { this.setVelocityX(0); this.setStateLabel('idle'); return; }
+    const dx = leader.x - this.x;
+    const dist = Math.abs(dx);
+    const grounded = this.body.blocked.down;
+
+    if (dist > 700) {
+      const dir = Math.sign(dx);
+      this.x = leader.x - dir * gap;
+      this.y = leader.y;
+      this.setVelocity(0, 0);
+    }
+
+    let moving = false;
+    if (dist > gap) {
+      const dir = Math.sign(dx);
+      this.setVelocityX(dir * this.speed * 0.95);
+      this.facing = dir;
+      this.setFlipX(dir < 0);
+      moving = true;
+    } else {
+      this.setVelocityX(0);
+    }
+
+    if (!grounded) {
+      this.setStateLabel(this.body.velocity.y < 0 ? 'jumping' : 'falling');
+    } else if (moving) {
+      this.setStateLabel('running');
+    } else {
+      this.setStateLabel('idle');
+    }
+
+    if (this.invulnerableUntil && time > this.invulnerableUntil) {
+      this.invulnerableUntil = 0;
+      this.clearTint();
+      this.setAlpha(1);
+    }
     this.wasGroundedLastFrame = grounded;
   }
 

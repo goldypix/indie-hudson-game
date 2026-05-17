@@ -138,8 +138,10 @@ class Level1Scene extends Phaser.Scene {
     const padA = this.gamepads.slots[0];
     const padB = this.gamepads.slots[1];
 
-    const indieActive  = this.mode === '2p' || this.character === 'indie';
-    const hudsonActive = this.mode === '2p' || this.character === 'hudson';
+    const indieActive  = true;
+    const hudsonActive = true;
+    const indieIsFollower  = this.mode === '1p' && this.character === 'hudson';
+    const hudsonIsFollower = this.mode === '1p' && this.character === 'indie';
 
     const indieSources = this.mode === '2p'
       ? { left: [this.cursors.left, padA.left], right: [this.cursors.right, padA.right], jump: [this.cursors.up, this.keys.SPACE, padA.jump], eat: [this.keys.E, padA.eat] }
@@ -167,14 +169,14 @@ class Level1Scene extends Phaser.Scene {
     ];
 
     const soloX = 150;
-    this.indie = indieActive ? new Player(this, this.mode === '2p' ? 100 : soloX, 500, {
+    this.indie = indieActive ? new Player(this, this.mode === '2p' ? 100 : (indieIsFollower ? soloX + 70 : soloX), 500, {
       spritePrefix: 'indie',
       initialFrame: 2,
-      controls: { left: indieLeft, right: indieRight, jump: [indieJump], eat: indieEat },
-      canEat: true
+      controls: indieIsFollower ? null : { left: indieLeft, right: indieRight, jump: [indieJump], eat: indieEat },
+      canEat: !indieIsFollower
     }) : null;
 
-    this.hudson = hudsonActive ? new Player(this, this.mode === '2p' ? 200 : soloX, 500, {
+    this.hudson = hudsonActive ? new Player(this, this.mode === '2p' ? 200 : (hudsonIsFollower ? soloX + 70 : soloX), 500, {
       spritePrefix: 'hudson',
       initialFrame: 1,
       animDisplayHeights: {
@@ -183,10 +185,14 @@ class Level1Scene extends Phaser.Scene {
         'hudson-jump-rise': 149,
         'hudson-jump-land': 149
       },
-      controls: { left: hudsonLeft, right: hudsonRight, jump: [hudsonJump], eat: null },
+      controls: hudsonIsFollower ? null : { left: hudsonLeft, right: hudsonRight, jump: [hudsonJump], eat: null },
       canEat: false
     }) : null;
 
+    if (indieIsFollower && this.hudson) this.indie.follow = { leader: this.hudson, gap: 90 };
+    if (hudsonIsFollower && this.indie) this.hudson.follow = { leader: this.indie, gap: 90 };
+
+    this.leader = this.mode === '1p' ? (this.character === 'indie' ? this.indie : this.hudson) : null;
     this.players = [this.indie, this.hudson].filter(Boolean);
     this.activeCharacters = this.players.map(p => p.prefix);
     this.voice = new VoiceHelper(this);
@@ -239,11 +245,14 @@ class Level1Scene extends Phaser.Scene {
       this.scene.restart();
       return;
     }
-    if (this.players.length > 0 && this.cameraTarget) {
-      const sumX = this.players.reduce((s, p) => s + p.x, 0);
-      const sumY = this.players.reduce((s, p) => s + p.y, 0);
-      this.cameraTarget.x = Math.round(sumX / this.players.length);
-      this.cameraTarget.y = Math.round(sumY / this.players.length);
+    if (this.cameraTarget) {
+      const focusPlayers = this.leader ? [this.leader] : this.players;
+      if (focusPlayers.length > 0) {
+        const sumX = focusPlayers.reduce((s, p) => s + p.x, 0);
+        const sumY = focusPlayers.reduce((s, p) => s + p.y, 0);
+        this.cameraTarget.x = Math.round(sumX / focusPlayers.length);
+        this.cameraTarget.y = Math.round(sumY / focusPlayers.length);
+      }
     }
     if (this.fpsText && this.fpsText.visible) {
       this.fpsText.setText(`${Math.round(this.game.loop.actualFps)} fps`);
@@ -257,7 +266,7 @@ class Level1Scene extends Phaser.Scene {
     }
     this.rocks.children.iterate(r => { if (r && r.active) r.update(); });
 
-    if (this.players.length > 1) {
+    if (this.mode === '2p' && this.players.length > 1) {
       const cam = this.cameras.main;
       const view = cam.worldView;
       const margin = 60;
@@ -337,14 +346,42 @@ class Level1Scene extends Phaser.Scene {
     this.time.delayedCall(2200, () => { if (p && p.active) p.destroy(); });
   }
 
+  isTouchOnly() {
+    return window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+  }
+
+  showEndScreen(headlineLines, headlineColor) {
+    const cx = this.scale.width / 2;
+    const cy = this.scale.height / 2;
+    const touch = this.isTouchOnly();
+    const headline = touch ? headlineLines : [...headlineLines, 'Press R to play again', 'Press M for menu'];
+    this.add.text(cx, cy - (touch ? 90 : 0), headline.join('\n'), {
+      fontSize: '56px', color: headlineColor, stroke: '#000000', strokeThickness: 8,
+      align: 'center', fontFamily: 'system-ui, sans-serif'
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(200);
+
+    if (!touch) return;
+
+    const btnStyle = {
+      fontSize: '48px', color: '#ffffff', stroke: '#000000', strokeThickness: 6,
+      backgroundColor: 'rgba(0,0,0,0.55)', padding: { left: 28, right: 28, top: 14, bottom: 14 },
+      fontFamily: 'Impact, "Arial Black", sans-serif'
+    };
+    const makeBtn = (x, label, onTap) => {
+      const t = this.add.text(x, cy + 80, label, btnStyle)
+        .setOrigin(0.5).setScrollFactor(0).setDepth(200).setInteractive();
+      t.on('pointerdown', onTap);
+      return t;
+    };
+    makeBtn(cx - 160, 'REPLAY', () => this.scene.restart({ mode: this.mode, character: this.character }));
+    makeBtn(cx + 160, 'MENU',   () => this.scene.start('Menu'));
+  }
+
   gameOver() {
     this.finished = true;
     this.players.forEach(p => p.setVelocity(0, 0));
     this.voice.playForRandomActive(this.activeCharacters, 'gameOver');
-    this.add.text(this.scale.width / 2, this.scale.height / 2, 'Game Over\nPress R to try again\nPress M for menu', {
-      fontSize: '56px', color: '#ffffff', stroke: '#000000', strokeThickness: 8,
-      align: 'center', fontFamily: 'system-ui, sans-serif'
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(200);
+    this.showEndScreen(['Game Over'], '#ffffff');
   }
 
   winLevel() {
@@ -352,10 +389,7 @@ class Level1Scene extends Phaser.Scene {
     this.finished = true;
     this.players.forEach(p => p.setVelocity(0, 0));
     this.voice.playForRandomActive(this.activeCharacters, 'jump');
-    this.add.text(this.scale.width / 2, this.scale.height / 2, `You Win!\nCoins: ${this.score}\nPress R to play again\nPress M for menu`, {
-      fontSize: '56px', color: '#FFD700', stroke: '#000000', strokeThickness: 8,
-      align: 'center', fontFamily: 'system-ui, sans-serif'
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(200);
+    this.showEndScreen([`You Win!`, `Coins: ${this.score}`], '#FFD700');
   }
 
   scheduleNextCallout() {
