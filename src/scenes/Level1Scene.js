@@ -190,7 +190,7 @@ class Level1Scene extends Phaser.Scene {
     this.scoreText = this.add.text(20, 16, 'Coins: 0', uiStyle).setScrollFactor(0).setDepth(100);
     this.livesText = this.add.text(20, 52, 'Lives: 5', { ...uiStyle, color: '#ff8aa0' }).setScrollFactor(0).setDepth(100);
     this.hint = this.add.text(20, 92,
-      'Indie: Arrows + Space jump, E eat    Hudson: WASD (W = jump)    R: restart    Gamepads supported (F1 = debug)',
+      'Indie: Arrows + Space jump, E eat    Hudson: WASD (W = jump)    R: restart    Gamepads supported',
       { fontSize: '15px', color: '#ffffff', stroke: '#000000', strokeThickness: 3, fontFamily: 'system-ui, sans-serif' }
     ).setScrollFactor(0).setDepth(100);
   }

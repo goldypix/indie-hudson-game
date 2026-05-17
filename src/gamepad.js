@@ -126,29 +126,35 @@ class GamepadManager {
     }
   }
   formatDebug(pads) {
-    const lines = ['Gamepad debug (F1 to hide)'];
+    const labels = ['Slot 0 (Indie)', 'Slot 1 (Hudson)', 'Slot 2', 'Slot 3'];
+    const lines = ['GAMEPAD DEBUG'];
     for (let i = 0; i < 4; i++) {
       const gp = pads[i];
-      if (!gp) { lines.push(`Pad ${i}: —`); continue; }
+      if (!gp) { lines.push(`${labels[i]}: —`); continue; }
       const pressed = [];
       gp.buttons.forEach((b, idx) => { if (b.pressed) pressed.push(idx); });
       const axes = (gp.axes || []).map(a => a.toFixed(2)).join(', ');
-      lines.push(`Pad ${i}: ${gp.id}`);
+      lines.push(`${labels[i]}: ${gp.id}`);
       lines.push(`  buttons: [${pressed.join(',') || '—'}]`);
       lines.push(`  axes: [${axes}]`);
     }
     return lines.join('\n');
   }
   attachDebugUI(scene) {
-    this.debugText = scene.add.text(20, 130, '', {
-      fontSize: '12px', color: '#9fffa0',
-      stroke: '#000', strokeThickness: 3,
+    this.debugText = scene.add.text(20, 130, 'GAMEPAD DEBUG\n(waiting...)', {
+      fontSize: '13px', color: '#ffff00',
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      padding: { x: 6, y: 4 },
+      stroke: '#000', strokeThickness: 2,
       fontFamily: 'monospace'
-    }).setScrollFactor(0).setDepth(200).setVisible(false);
-    scene.input.keyboard.on('keydown-F1', () => {
+    }).setScrollFactor(0).setDepth(1000).setVisible(false);
+    const toggle = () => {
       this.debugVisible = !this.debugVisible;
       this.debugText.setVisible(this.debugVisible);
-    });
+    };
+    scene.input.keyboard.on('keydown-ZERO', toggle);
+    scene.input.keyboard.on('keydown-NUMPAD_ZERO', toggle);
+    scene.input.keyboard.on('keydown-MINUS', toggle);
   }
 }
 
