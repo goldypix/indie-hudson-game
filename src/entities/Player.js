@@ -20,8 +20,10 @@ class Player extends Phaser.Physics.Arcade.Sprite {
       [`${prefix}-run`]:  140,
       [`${prefix}-jump-rise`]: 188,
       [`${prefix}-jump-land`]: 188,
-      [`${prefix}-suck`]:         140,
-      [`${prefix}-cheeks-full`]:  140
+      [`${prefix}-suck`]:        140,
+      [`${prefix}-idle-mouth`]:  140,
+      [`${prefix}-shoot-pre`]:   140,
+      [`${prefix}-shoot-post`]:  140
     };
     this.applyDisplayHeight();
     this.refreshBody();
@@ -67,7 +69,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     else if (s === 'jumping' || s === 'falling') animKey = `${this.prefix}-jump-rise`;
     else if (s === 'landing') animKey = `${this.prefix}-jump-land`;
     else if (s === 'sucking') animKey = `${this.prefix}-suck`;
-    else if (s === 'cheeksFull') animKey = `${this.prefix}-cheeks-full`;
+    else if (s === 'cheeksFull') animKey = `${this.prefix}-idle-mouth`;
     else animKey = `${this.prefix}-idle`;
 
     if (!this.scene_.anims.exists(animKey)) animKey = `${this.prefix}-idle`;
@@ -84,6 +86,12 @@ class Player extends Phaser.Physics.Arcade.Sprite {
   update(time) {
     if (this.rotation !== 0) this.setRotation(0);
     if (this.follow) { this.followUpdate(time); return; }
+    if (this.shooting) {
+      this.setVelocityX(0);
+      this.wasGroundedLastFrame = this.body.blocked.down;
+      if (this.canEat && this.controls && this.controls.eat) this.wasEatHeld = this.controls.eat.isDown;
+      return;
+    }
     const c = this.controls;
     if (!c) return;
     const left  = c.left  && c.left.isDown;
@@ -91,7 +99,8 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     const jumpKeys = c.jump || [];
     const jump = jumpKeys.some(k => k && Phaser.Input.Keyboard.JustDown(k));
     const eatHeld        = this.canEat && c.eat && c.eat.isDown;
-    const eatJustPressed = this.canEat && c.eat && Phaser.Input.Keyboard.JustDown(c.eat);
+    const eatJustReleased = this.canEat && this.wasEatHeld && !eatHeld;
+    this.wasEatHeld = eatHeld;
 
     if (left) {
       this.setVelocityX(-this.speed);
@@ -126,8 +135,13 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (this.canEat) {
-      if (this.cheeksFull && eatJustPressed) {
+      if (this.cheeksFull && eatJustReleased) {
         this.spit();
+        if (this.shooting) {
+          this.setVelocityX(0);
+          this.wasGroundedLastFrame = this.body.blocked.down;
+          return;
+        }
       } else if (eatHeld && !this.cheeksFull) {
         this.applySuckPull();
       } else if (this.suckTarget) {
@@ -282,10 +296,55 @@ class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   spit() {
-    if (!this.cheeksFull) return;
+    if (!this.cheeksFull || this.shooting) return;
     this.cheeksFull = false;
-    this.scene_.spawnProjectile(this.x + this.facing * 40, this.y - 50, this.facing);
+    this.setVelocityX(0);
+
+    const preKey  = `${this.prefix}-shoot-pre`;
+    const postKey = `${this.prefix}-shoot-post`;
+    const hasShoot = this.scene_.anims.exists(preKey) && this.scene_.anims.exists(postKey);
     this.scene_.voice?.play(this.prefix, 'spit');
+
+    if (!hasShoot) {
+      for (let i = 0; i < 4; i++) {
+        this.scene_.time.delayedCall(i * 250, () => {
+          this.scene_.spawnPebble?.(this.x + this.facing * 50, this.y - 80, this.facing);
+        });
+      }
+      return;
+    }
+
+    this.shooting = true;
+    this.play(preKey);
+    this.applyDisplayHeight();
+    this.refreshBody();
+
+    const preMs       = 235;   // 4 frames @ 18fps ≈ 222ms, +small buffer to ensure frame 4 is on screen
+    const pebbleCount = 4;
+    const pebbleGapMs = 250;   // 4 pebbles per second
+    const holdMs      = pebbleCount * pebbleGapMs;   // 1000ms hold on frame 4
+    const postMs      = 260;   // 3 frames @ 14fps ≈ 214ms + buffer
+    const failsafeMs  = preMs + holdMs + postMs + 800;
+
+    // Fire pebbles one by one starting the moment we hit frame 4 (the end of preKey)
+    for (let i = 0; i < pebbleCount; i++) {
+      this.scene_.time.delayedCall(preMs + i * pebbleGapMs, () => {
+        if (!this.active || !this.shooting) return;
+        this.scene_.spawnPebble(this.x + this.facing * 60, this.y - 90, this.facing);
+      });
+    }
+
+    // After the hold (last pebble fired), play the recovery anim
+    this.scene_.time.delayedCall(preMs + holdMs, () => {
+      if (!this.active || !this.shooting) return;
+      this.play(postKey);
+      this.applyDisplayHeight();
+      this.refreshBody();
+      this.scene_.time.delayedCall(postMs, () => { this.shooting = false; });
+    });
+
+    // Safety: never let shooting get stuck
+    this.scene_.time.delayedCall(failsafeMs, () => { if (this.shooting) this.shooting = false; });
   }
 
   takeDamage(time) {

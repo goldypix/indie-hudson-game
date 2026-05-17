@@ -118,6 +118,7 @@ class Level1Scene extends Phaser.Scene {
     this.scheduleNextRock();
 
     this.projectiles = this.physics.add.group({ allowGravity: false });
+    this.pebbles = this.physics.add.group();
 
     this.flag = this.physics.add.staticSprite(this.worldWidth - 150, 670, 'flag-1');
     this.flag.setOrigin(0.5, 1).setScale(0.85).refreshBody();
@@ -210,6 +211,8 @@ class Level1Scene extends Phaser.Scene {
     this.physics.add.collider(this.rocks, this.platforms, null, (rock, plat) => plat.texture.key === 'ground-tile');
     this.physics.add.collider(this.projectiles, this.platforms, (p) => p.destroy());
     this.physics.add.overlap(this.projectiles, this.rocks, (p, r) => { p.destroy(); r.squish(); this.bumpScore(2); }, null, this);
+    this.physics.add.collider(this.pebbles, this.platforms, (p) => p.destroy());
+    this.physics.add.overlap(this.pebbles, this.rocks, (p, r) => { p.destroy(); r.squish(); this.bumpScore(2); }, null, this);
 
     this.players.forEach(p => {
       this.physics.add.collider(p, this.platforms, (player, platform) => {
@@ -345,6 +348,18 @@ class Level1Scene extends Phaser.Scene {
     p.setVelocityX(dir * 720);
     p.setVelocityY(-120);
     this.time.delayedCall(2200, () => { if (p && p.active) p.destroy(); });
+  }
+
+  spawnPebble(x, y, dir) {
+    const idx = Phaser.Math.Between(1, 10);
+    const p = this.pebbles.create(x, y, `pebble-${idx}`);
+    p.setScale(0.5);
+    p.body.setAllowGravity(true);
+    p.body.gravity.y = -1100; // net gravity ≈ 300 → slow drop, no upward arc
+    p.setVelocityX(dir * 900);
+    p.setVelocityY(140);
+    p.setAngularVelocity(Phaser.Math.Between(-300, 300));
+    this.time.delayedCall(3500, () => { if (p && p.active) p.destroy(); });
   }
 
   isTouchOnly() {

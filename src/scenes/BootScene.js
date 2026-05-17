@@ -21,6 +21,17 @@ class BootScene extends Phaser.Scene {
     }
     for (let i = 1; i <= 7; i++) {
       const n = String(i).padStart(2, '0');
+      this.load.image(`indie-shoot-${i}`, `assets/sprites/indie-shoot-pebbles/indie-shoot-pebbles_${n}.png`);
+    }
+    for (let i = 1; i <= 10; i++) {
+      const n = String(i).padStart(2, '0');
+      this.load.image(`indie-idle-mouth-${i}`, `assets/indie-idle-mouth-v01/indie-idle-mouth-v01_${n}.png`);
+    }
+    for (let i = 1; i <= 10; i++) {
+      this.load.image(`pebble-${i}`, `assets/sprites/pebbles/pebble_${i}.png`);
+    }
+    for (let i = 1; i <= 7; i++) {
+      const n = String(i).padStart(2, '0');
       this.load.image(`rock-run-${i}`, `assets/sprites/rock-run-v1/rock-run_${n}.png`);
     }
     for (let i = 1; i <= 4; i++) {
@@ -89,6 +100,9 @@ class BootScene extends Phaser.Scene {
       ...[1, 2, 3, 4, 5, 6, 7, 8].map(i => `indie-run-${i}`),
       ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => `indie-jump-${i}`),
       ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => `indie-suck-${i}`),
+      ...[1, 2, 3, 4, 5, 6, 7].map(i => `indie-shoot-${i}`),
+      ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => `indie-idle-mouth-${i}`),
+      ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => `pebble-${i}`),
       ...[1, 2, 3, 4, 5, 6, 7].map(i => `rock-run-${i}`),
       ...[1, 2, 3, 4].map(i => `rock-break-${i}`),
       ...[1, 2, 3, 4].map(i => `koji-idle-${i}`),
@@ -138,10 +152,22 @@ class BootScene extends Phaser.Scene {
       repeat: 0
     });
     this.anims.create({
-      key: 'indie-cheeks-full',
-      frames: [7, 8, 9, 10].map(i => ({ key: `indie-suck-${i}` })),
-      frameRate: 4,
+      key: 'indie-idle-mouth',
+      frames: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => ({ key: `indie-idle-mouth-${i}` })),
+      frameRate: 6,
       repeat: -1
+    });
+    this.anims.create({
+      key: 'indie-shoot-pre',
+      frames: [1, 2, 3, 4].map(i => ({ key: `indie-shoot-${i}` })),
+      frameRate: 18,
+      repeat: 0
+    });
+    this.anims.create({
+      key: 'indie-shoot-post',
+      frames: [5, 6, 7].map(i => ({ key: `indie-shoot-${i}` })),
+      frameRate: 14,
+      repeat: 0
     });
     this.anims.create({
       key: 'rock-run',
