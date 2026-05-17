@@ -18,8 +18,8 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     this.animDisplayHeights = opts.animDisplayHeights || {
       [`${prefix}-idle`]: 140,
       [`${prefix}-run`]:  140,
-      [`${prefix}-jump-rise`]: 202,
-      [`${prefix}-jump-land`]: 202,
+      [`${prefix}-jump-rise`]: 150,
+      [`${prefix}-jump-land`]: 150,
       [`${prefix}-suck`]:         140,
       [`${prefix}-cheeks-full`]:  140
     };
