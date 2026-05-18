@@ -307,7 +307,11 @@ class Level1Scene extends Phaser.Scene {
     coin.disableBody(true, true);
     this.bumpScore(1);
     if (this.cache.audio.exists('sfx-coin')) this.sound.play('sfx-coin', { volume: 0.55 });
-    this.voice.play(player.prefix, 'coin', { chance: 0.35 });
+    const isHudson = player.prefix === 'hudson';
+    this.voice.play(player.prefix, 'coin', {
+      chance: isHudson ? 0.4375 : 0.35,
+      volume: isHudson ? 1.6 : undefined,
+    });
   }
 
   handleRockHit(player, rock) {
